@@ -104,6 +104,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
           <SectionCard title="Transporte">
             <div className="grid gap-2">
               <List items={day.transport.length > 0 ? day.transport : ["Sin transporte programado"]} />
+              {day.reservationIds.includes("transfer-home-eze") ? <div className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">Casa → Aeropuerto Ezeiza. Configurar dirección de casa para pedir Uber.</div> : null}
               {day.flight ? <FlightDetails flight={day.flight} documents={approvedDocuments} /> : null}
               <RiskConfirmationDialog
                 action="Abrir traslado"
