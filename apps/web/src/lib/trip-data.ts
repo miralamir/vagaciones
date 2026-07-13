@@ -121,12 +121,14 @@ export type TripDay = {
   conciergeTip: string;
   documents: TravelDocument[];
   pending: string[];
+  reservationIds: string[];
   flight?: {
     airline: string;
     flightNumber: string;
     origin: string;
     destination: string;
     departure: string;
+    departureISO?: string;
     arrival: string;
     reservations: string[];
     passengers: string[];
@@ -194,6 +196,7 @@ export const tripDays: TripDay[] = curatedDays.map((day, index) => {
     conciergeTip: "Revisa los horarios y documentos cargados antes de salir.",
     documents: [],
     pending: day.pending,
+    reservationIds: [...day.transportReservationIds, ...(day.accommodationReservationId ? [day.accommodationReservationId] : []), ...(day.activityReservationIds ?? [])],
     flight: flight ? toFlight(flight) : undefined
   };
 });
@@ -268,6 +271,7 @@ function toFlight(reservation: CuratedReservation) {
     origin: [reservation.origin, reservation.originCity].filter(isPresent).join(" - ") || "Origen pendiente",
     destination: [reservation.destination, reservation.destinationCity].filter(isPresent).join(" - ") || "Destino pendiente",
     departure: formatDateTime(reservation.departure),
+    departureISO: reservation.departure,
     arrival: formatDateTime(reservation.arrival),
     reservations: [reservation.locator, ...(reservation.additionalLocators ?? [])].filter(isPresent),
     passengers: reservation.passengers
@@ -293,7 +297,7 @@ function formatDate(date: string) {
 function formatDateTime(value: string | undefined) {
   if (!value) return "Pendiente";
   if (!value.includes("T")) return formatDate(value);
-  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(value));
 }
 
 function mapsUrl(destination: string) {

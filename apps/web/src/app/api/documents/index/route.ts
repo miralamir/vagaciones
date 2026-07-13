@@ -34,6 +34,7 @@ export async function GET() {
       associatedDays: link.associatedDays,
       city: null,
       linkedReservation: link.reservationCode ?? null,
+      relatedReservationIds: link.relatedReservationIds ?? [],
       passengers: link.passenger ? [link.passenger] : [],
       originalFileName: link.fileName,
       originalRelativePath: `incoming/${link.fileName}`,

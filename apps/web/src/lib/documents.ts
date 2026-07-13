@@ -1,5 +1,6 @@
 import { documentIndex } from "./document-index.generated";
 import type { DocumentCategory, IndexedDocument } from "./document-types";
+import { getTripDay } from "./trip-data";
 
 export function getDocumentIndex() {
   return documentIndex;
@@ -13,8 +14,9 @@ export function getDocumentById(id: string) {
   return getIndexedDocuments().find((document) => document.id === id);
 }
 
-export function getDocumentsForDay(day: number) {
-  return getIndexedDocuments().filter((document) => document.associatedDays.includes(day));
+export function getDocumentsForDay(day: number, source = getIndexedDocuments()) {
+  const reservationIds = new Set(getTripDay(day).reservationIds);
+  return source.filter((document) => document.associatedDays.includes(day) || (document.relatedReservationIds ?? []).some((id) => reservationIds.has(id)));
 }
 
 export function getQuickDocumentsForDay(day: number) {

@@ -70,3 +70,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 export function openExternalUrl(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
+
+export function openUberToDestination(destination: string) {
+  openExternalUrl(`https://m.uber.com/ul/?action=setPickup&dropoff[formatted_address]=${encodeURIComponent(destination)}`);
+}

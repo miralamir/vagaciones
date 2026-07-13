@@ -48,7 +48,7 @@ export function getFlightDocumentStatus(day: TripDay, flightLabel: string, docum
       : checkInOpen
         ? "Check-in online pendiente. El boarding pass estara disponible al completarlo."
         : "Documento futuro esperado. El boarding pass y QR estaran disponibles despues del check-in online.",
-    reminder: checkInOpen || boardingLoaded ? null : "Recordatorio configurable 48 horas antes del vuelo."
+    reminder: checkInOpen || boardingLoaded ? null : `Check-in disponible desde ${checkInOpensAt.toLocaleString("es-AR")}. Boarding pass y QR pendientes hasta check-in.`
   };
 }
 
@@ -57,6 +57,7 @@ export function isFlightDocumentPending(status: FlightDocumentStatus) {
 }
 
 function getCheckInOpensAt(day: TripDay) {
-  const departure = new Date(`${day.dateISO}T12:00:00`);
-  return new Date(departure.getTime() - 48 * 60 * 60 * 1000);
+  const departure = new Date(day.flight?.departureISO ?? `${day.dateISO}T12:00:00`);
+  const hours = /Aerolíneas Argentinas/i.test(day.flight?.airline ?? "") ? 24 : 48;
+  return new Date(departure.getTime() - hours * 60 * 60 * 1000);
 }

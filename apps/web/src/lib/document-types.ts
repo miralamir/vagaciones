@@ -73,6 +73,7 @@ export type IndexedDocument = {
   associatedDays: readonly number[];
   city: string | null;
   linkedReservation: string | null;
+  relatedReservationIds?: readonly string[];
   passengers: readonly string[];
   originalFileName: string;
   originalRelativePath: string;

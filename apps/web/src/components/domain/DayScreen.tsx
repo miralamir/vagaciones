@@ -2,19 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useTripContext } from "@/hooks/useTripContext";
-import { getViewerUrl } from "@/lib/documents";
+import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { getStatusLabel, getTripDay, trip } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
-import { openExternalUrl, RiskConfirmationDialog } from "./RiskConfirmationDialog";
+import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
 import { FlightDocumentStatusCard } from "./FlightDocumentStatusCard";
 
 export function DayScreen({ initialDay }: { initialDay: number }) {
   const router = useRouter();
-  const context = useTripContext();
   const day = getTripDay(initialDay);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -29,8 +27,8 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
     router.push(`/trips/europa-2026/days/${targetDay}`);
   };
 
-  const documentList = useMemo(() => approvedDocuments.filter((document) => document.associatedDays.includes(day.day)), [approvedDocuments, day.day]);
-  const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments, context.now);
+  const documentList = useMemo(() => getDocumentsForDay(day.day, approvedDocuments), [approvedDocuments, day.day]);
+  const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments);
 
   useEffect(() => {
     void fetch("/api/documents/index", { cache: "no-store" })
@@ -59,12 +57,6 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
         }}
       >
         <div className="rounded-lg border border-black/10 bg-white p-3 shadow-sm">
-          <div className="mb-3 rounded-md bg-mist px-3 py-2">
-            <p className="text-[10px] font-black uppercase tracking-wide text-sea">Contexto automatico</p>
-            <p className="text-sm font-black text-ink">
-              {context.currentCity} · {context.nextEvent} · {context.countdown}
-            </p>
-          </div>
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
             <button
               className="rounded-md border border-black/10 px-3 py-4 text-sm font-black text-ink disabled:opacity-35"
@@ -130,7 +122,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
               <div>
                 <p className="font-bold text-ink">{day.hotel.name}</p>
                 <p className="mt-1 text-sm text-ink/65">{day.hotel.address}</p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   <RiskConfirmationDialog
                     action="Abrir hotel"
                     dataShared={day.hotel.address}
@@ -140,6 +132,15 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
                   >
                     {(open) => <button className="rounded-md bg-sea px-3 py-4 text-center text-sm font-black text-white" onClick={open} type="button">Llevame</button>}
                   </RiskConfirmationDialog>
+                  {hasUsableAddress(day.hotel.address) ? <RiskConfirmationDialog
+                    action="Pedir Uber al hotel"
+                    dataShared={day.hotel.address}
+                    destination="Uber"
+                    consequence="Vas a abrir Uber con este destino. Revisa dirección, horario y tarifa antes de confirmar el viaje."
+                    onConfirm={() => openUberToDestination(day.hotel!.address)}
+                  >
+                    {(open) => <button className="rounded-md bg-ink px-3 py-4 text-center text-sm font-black text-white" onClick={open} type="button">Pedir Uber</button>}
+                  </RiskConfirmationDialog> : null}
                   <RiskConfirmationDialog
                     action="Llamar al hotel"
                     dataShared={day.hotel.phone}
@@ -206,7 +207,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
 
 function FlightDetails({ flight, documents }: { flight: NonNullable<ReturnType<typeof getTripDay>["flight"]>; documents: IndexedDocument[] }) {
   const document = documents.find((item) => item.linkedReservation && flight.reservations.includes(item.linkedReservation));
-  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Vuelo</p><p className="font-black text-ink">{flight.airline} {flight.flightNumber}</p><p className="mt-1 text-sm font-bold text-ink/70">{flight.origin} a {flight.destination}</p><p className="mt-1 text-sm font-semibold text-ink/70">Sale {flight.departure} · Llega {flight.arrival}</p><p className="mt-2 text-sm font-bold text-ink">Reservas: {flight.reservations.join(" / ")}</p><div className="mt-3 grid gap-2">{flight.passengers.map((passenger) => <div className="flex items-center justify-between rounded-md bg-white px-3 py-2" key={passenger}><span className="font-bold text-ink">Reserva Air Europa {passenger}</span>{document ? <a className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" href={getViewerUrl(document)}>Mostrar PDF</a> : <span className="rounded-md bg-ink/10 px-3 py-2 text-sm font-black text-ink/60">PDF pendiente de asociar</span>}</div>)}</div></div>;
+  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Vuelo</p><p className="font-black text-ink">{flight.airline} {flight.flightNumber}</p><p className="mt-1 text-sm font-bold text-ink/70">{flight.origin} a {flight.destination}</p><p className="mt-1 text-sm font-semibold text-ink/70">Sale {flight.departure} · Llega {flight.arrival}</p><p className="mt-2 text-sm font-bold text-ink">Reserva: {flight.reservations.join(" / ")}</p><div className="mt-3 flex items-center justify-between rounded-md bg-white px-3 py-2"><span className="font-bold text-ink">Reserva / e-ticket</span>{document ? <a className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" href={getViewerUrl(document)}>Mostrar reserva</a> : <span className="text-sm font-black text-ink/60">Reserva PDF pendiente de asociar</span>}</div></div>;
 }
 
 function List({ items }: { items: string[] }) {
@@ -217,4 +218,8 @@ function List({ items }: { items: string[] }) {
       ))}
     </ul>
   );
+}
+
+function hasUsableAddress(value: string) {
+  return Boolean(value) && !/pendiente/i.test(value);
 }
