@@ -10,10 +10,14 @@ import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
 import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
 import { FlightDocumentStatusCard } from "./FlightDocumentStatusCard";
+import { Checklist, type ChecklistItem } from "./Checklist";
+import checklists from "../../../../../data/trips/europa-2026/checklists.json";
 
 export function DayScreen({ initialDay }: { initialDay: number }) {
   const router = useRouter();
-  const day = getTripDay(initialDay);
+  const isPreparation = initialDay === 0;
+  const day = getTripDay(isPreparation ? 1 : initialDay);
+  const checklistItems = (checklists.byDay[String(initialDay) as keyof typeof checklists.byDay] ?? []) as ChecklistItem[];
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [approvedDocuments, setApprovedDocuments] = useState<IndexedDocument[]>([]);
@@ -67,9 +71,9 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
               {"<"} Dia
             </button>
             <div className="text-center">
-              <p className="text-xs font-black uppercase tracking-wide text-sea">Dia {day.day} de {trip.totalDays}</p>
-              <h2 className="text-xl font-black leading-tight text-ink">{day.date}</h2>
-              <p className="text-sm font-semibold text-ink/65">{day.city}</p>
+              <p className="text-xs font-black uppercase tracking-wide text-sea">Día {isPreparation ? 0 : day.day} de {trip.totalDays}</p>
+              <h2 className="text-xl font-black leading-tight text-ink">{isPreparation ? "Preparación" : day.date}</h2>
+              <p className="text-sm font-semibold text-ink/65">{isPreparation ? "Buenos Aires" : day.city}</p>
             </div>
             <button
               className="rounded-md border border-black/10 px-3 py-4 text-sm font-black text-ink disabled:opacity-35"
@@ -174,7 +178,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
           </SectionCard>
 
           <SectionCard title="Checklist">
-            <List items={day.checklist} />
+            <Checklist day={initialDay} items={checklistItems.length ? checklistItems : day.checklist.map((label, index) => ({ id: `day-${day.day}-${index}`, label, priority: "medium" }))} />
           </SectionCard>
 
           <SectionCard title="Pendientes">
