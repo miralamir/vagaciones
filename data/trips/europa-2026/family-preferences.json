@@ -1,4 +1,16 @@
 {
-  "travelers": ["Mariano Franze", "Nadia", "Leon", "Bruno"],
-  "documentHandling": { "confirmSensitiveDocuments": true }
+  "travelers": ["Mariano Franze", "Nadia Rodoviztki", "León", "Bruno"],
+  "travelStyle": ["utilidad", "descanso", "comida local", "paseos", "arquitectura", "agua y naturaleza", "experiencias memorables"],
+  "avoid": ["viaje de tachar monumentos", "museos largos como eje principal"],
+  "travelerInterests": {
+    "Mariano Franze": ["arte", "arquitectura", "fotografía", "gastronomía local"],
+    "Nadia Rodoviztki": ["descanso", "perfumes de autor", "diseño", "tiendas seleccionadas"],
+    "Bruno": ["LEGO", "jugueterías", "experiencias visuales"],
+    "León": ["naturaleza", "movimiento", "experiencias"]
+  },
+  "documentHandling": {
+    "confirmSensitiveDocuments": true,
+    "allowOfflineSensitiveDocumentsOnlyWithConfirmation": true
+  },
+  "pending": ["Preferencias de movilidad, alimentación, accesibilidad y contactos de emergencia pendientes de cargar."]
 }

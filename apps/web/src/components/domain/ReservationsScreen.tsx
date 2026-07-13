@@ -6,7 +6,10 @@ const groups: Array<{ type: Reservation["type"]; title: string }> = [
   { type: "vuelo", title: "Vuelos" },
   { type: "hotel", title: "Hoteles" },
   { type: "tren", title: "Trenes" },
-  { type: "crucero", title: "Crucero" }
+  { type: "crucero", title: "Crucero" },
+  { type: "entrada", title: "Entradas" },
+  { type: "traslado", title: "Traslados" },
+  { type: "seguro", title: "Seguro" }
 ];
 
 export function ReservationsScreen() {
@@ -26,6 +29,8 @@ export function ReservationsScreen() {
                     <span className="rounded-full bg-mist px-2 py-1 text-xs font-bold uppercase text-sea">{reservation.status}</span>
                   </div>
                   <p className="mt-3 text-sm text-ink/75">{reservation.detail}</p>
+                  {reservation.locator ? <p className="mt-2 text-sm font-bold text-ink">Localizador: {reservation.locator}</p> : null}
+                  {reservation.pending.length > 0 ? <p className="mt-2 text-sm font-semibold text-coral">Pendiente: {reservation.pending.join(" ")}</p> : null}
                 </article>
               ))}
             </div>

@@ -6,6 +6,10 @@ import { openExternalUrl, RiskConfirmationDialog } from "./RiskConfirmationDialo
 export function HotelScreen() {
   const hotel = getActiveHotel();
 
+  if (!hotel) {
+    return <AppShell><SectionCard title="Hotel"><p className="text-ink/65">No hay alojamiento curado para el contexto actual.</p></SectionCard></AppShell>;
+  }
+
   return (
     <AppShell>
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -49,6 +53,7 @@ export function HotelScreen() {
             <Detail label="Confirmacion" value={hotel.confirmationNumber ?? "No cargada"} />
             <Detail label="Pasajeros" value={hotel.passengers?.join(", ") ?? "No cargados"} />
             <Detail label="Importe pendiente" value={hotel.pendingAmount ?? "No informado"} />
+            {hotel.pending.length > 0 ? <Detail label="Pendientes" value={hotel.pending.join(" ")} /> : null}
           </dl>
         </SectionCard>
       </section>

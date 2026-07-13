@@ -1,49 +1,38 @@
 {
-  "tripSlug": "europa-2026",
-  "flights": [
-    {
-      "id": "flight-gru-mad",
-      "provider": "Air Europa",
-      "matchCodes": ["9NSADF"],
-      "segments": [
-        { "flightNumber": "UX58", "origin": "GRU", "originCity": "Sao Paulo", "destination": "MAD", "destinationCity": "Madrid", "departureDate": "2026-07-20", "arrivalDate": "2026-07-21", "associatedDays": [3, 4] },
-        { "flightNumber": "UX83", "origin": "MAD", "originCity": "Madrid", "destination": "SSA", "destinationCity": "Salvador", "departureDate": "2026-08-11", "arrivalDate": null, "associatedDays": [25] }
-      ]
-    },
-    {
-      "id": "flight-eze-igu",
-      "provider": "Aerolíneas Argentinas",
-      "matchCodes": ["AIGHSA"],
-      "segments": [
-        { "flightNumber": null, "origin": "EZE", "originCity": "Buenos Aires", "destination": "IGU", "destinationCity": "Iguazu", "departureDate": "2026-07-18", "arrivalDate": null, "associatedDays": [1] }
-      ]
-    },
-    {
-      "id": "flight-igu-cgh",
-      "provider": "GOL",
-      "matchCodes": ["GUFHND"],
-      "segments": [
-        { "flightNumber": "G3 1123", "origin": "IGU", "originCity": "Iguazu", "destination": "CGH", "destinationCity": "Sao Paulo", "departureDate": null, "arrivalDate": null, "associatedDays": [] }
-      ]
-    },
-    {
-      "id": "flight-ssa-aep",
-      "provider": "GOL",
-      "matchCodes": [],
-      "segments": [
-        { "flightNumber": "G3 1691", "origin": "SSA", "originCity": "Salvador", "destination": "GRU", "destinationCity": "Sao Paulo", "departureDate": null, "arrivalDate": null, "associatedDays": [] },
-        { "flightNumber": "G3 7644", "origin": "GRU", "originCity": "Sao Paulo", "destination": "AEP", "destinationCity": "Buenos Aires", "departureDate": null, "arrivalDate": null, "associatedDays": [] }
-      ]
-    }
-  ],
-  "reservations": [
-    { "id": "maison-venezia", "provider": "Maison Venezia | UNA Esperienze", "matchCodes": ["47875SG007033"], "terms": ["maison venezia", "una esperienze"], "kind": "stay", "city": "Venecia", "checkIn": "2026-07-28", "checkOut": "2026-07-30", "associatedDays": [11, 12, 13] },
-    { "id": "terminus-lyon", "provider": "Hotel Terminus Lyon", "matchCodes": ["SCKUTW"], "terms": ["terminus lyon"], "kind": "stay", "city": "Paris", "checkIn": "2026-07-24", "checkOut": "2026-07-26", "associatedDays": [7, 8, 9] },
-    { "id": "riu-madrid", "provider": "Riu Hotels & Resorts", "matchCodes": ["WRC3HKDD", "WRC386HV"], "terms": ["riu plaza"], "kind": "stay", "city": "Madrid", "checkIn": "2026-08-09", "checkOut": "2026-08-11", "associatedDays": [23, 24, 25] },
-    { "id": "msc-divina", "provider": "MSC", "matchCodes": ["67652452"], "terms": ["msc divina", "cabin 13105", "cabina 13105"], "kind": "cruise", "city": "Civitavecchia", "departureDate": "2026-07-31", "returnDate": "2026-08-07", "associatedDays": [14, 15, 16, 17, 18, 19, 20, 21] },
-    { "id": "colosseum", "provider": "Colosseum", "matchCodes": ["GPCO4V6Z5LLAX4EV"], "terms": ["colosseum", "coliseo", "underground", "arena"], "kind": "event", "city": "Roma", "eventDate": "2026-08-08", "associatedDays": [22] },
-    { "id": "lindt", "provider": "Lindt Home of Chocolate", "matchCodes": ["64954460"], "terms": ["lindt"], "kind": "event", "city": "Zurich", "eventDate": "2026-07-26", "eventTime": "17:00", "associatedDays": [9] },
-    { "id": "varenna-como", "provider": "Booking.com", "matchCodes": [], "terms": ["varrena dicomo", "varenna", "lago di como"], "kind": "stay", "city": "Varenna", "checkIn": "2026-07-27", "checkOut": "2026-07-28", "associatedDays": [10, 11] },
-    { "id": "salvador-airport-transfer", "provider": null, "matchCodes": [], "terms": ["slvador aeopuert", "salvador aeropuerto"], "kind": "transfer", "city": "Salvador", "transferDate": "2026-08-11", "associatedDays": [25, 26] }
+  "trip": {
+    "id": "europa-2026",
+    "slug": "europa-2026",
+    "name": "Europa 2026",
+    "startDate": "2026-07-18",
+    "endDate": "2026-08-12",
+    "totalDays": 26
+  },
+  "days": [
+    { "day": 1, "date": "2026-07-18", "city": "Buenos Aires", "route": "Buenos Aires -> Iguazú / Foz do Iguaçu", "summary": "Vuelo a Iguazú y descanso en Recanto Cataratas.", "transportReservationIds": ["flight-eze-igr"], "notes": ["No sobrecargar de actividades; priorizar descanso, pileta y hotel."], "pending": ["Confirmar traslado a Ezeiza y asociar voucher de hotel si existe."] },
+    { "day": 2, "date": "2026-07-19", "city": "Iguazú -> São Paulo", "route": "IGU -> CGH -> Guarulhos", "summary": "Vuelo GOL y noche de conexión cerca de GRU.", "transportReservationIds": ["flight-g3-1123"], "accommodationReservationId": "panamby-guarulhos", "notes": ["Prioridad: dormir cerca de GRU para el vuelo internacional."], "pending": ["Asociar traslado Congonhas -> Hotel Panamby si existe."] },
+    { "day": 3, "date": "2026-07-20", "city": "São Paulo", "route": "GRU -> MAD", "summary": "Vuelo Air Europa UX58 hacia Madrid.", "transportReservationIds": ["flight-ux58"], "accommodationReservationId": "panamby-guarulhos", "notes": ["Salir con margen desde Hotel Panamby a GRU. Tener documentos físicos a mano."], "pending": ["Boarding pass y QR pendientes futuro hasta check-in."] },
+    { "day": 4, "date": "2026-07-21", "city": "Madrid", "summary": "Llegada temprana a Madrid y día suave.", "transportReservationIds": ["flight-ux58"], "accommodationReservationId": "riu-madrid-arrival", "notes": ["Descanso o paseo liviano por Gran Vía y Plaza España."], "pending": [] },
+    { "day": 5, "date": "2026-07-22", "city": "Barcelona", "route": "Madrid -> Barcelona", "summary": "Traslado a Barcelona y llegada junto al mar.", "transportReservationIds": ["ouigo-mad-bcn"], "accommodationReservationId": "resa-campus-del-mar", "notes": ["Mantener el día flexible."], "pending": ["Confirmar horario y localizador de OUIGO."] },
+    { "day": 6, "date": "2026-07-23", "city": "Barcelona", "summary": "Día flexible en Barcelona.", "transportReservationIds": [], "accommodationReservationId": "resa-campus-del-mar", "notes": ["Sagrada Familia solo si compran entrada; evitar museos largos."], "pending": ["Definir plan suave y si compran Sagrada Familia."] },
+    { "day": 7, "date": "2026-07-24", "city": "París", "route": "Barcelona -> París", "summary": "Tren a París y check-in cerca de Gare de Lyon.", "transportReservationIds": ["tgv-barcelona-paris"], "accommodationReservationId": "terminus-lyon", "notes": ["Hotel elegido por conveniencia para el tren posterior a Suiza."], "pending": ["Completar horario y localizador del tren."] },
+    { "day": 8, "date": "2026-07-25", "city": "Paris", "summary": "Estadia en Paris.", "transportReservationIds": [], "accommodationReservationId": "terminus-lyon", "notes": [], "pending": ["Actividades pendientes de cargar."] },
+    { "day": 9, "date": "2026-07-26", "city": "París -> Basilea -> Zürich", "route": "París Gare de Lyon -> Basel SBB -> Zürich", "summary": "TGV Lyria, llegada a Zürich y Lindt a las 17:00.", "transportReservationIds": ["tgv-lyria-paris-basel"], "accommodationReservationId": "mercure-zurich", "activityReservationIds": ["lindt-home-of-chocolate"], "notes": ["Controlar tiempos entre Basel, hotel y Lindt."], "pending": ["Asociar SBB Saver Day Pass y documentos." ] },
+    { "day": 10, "date": "2026-07-27", "city": "Zürich -> St. Moritz -> Tirano -> Varenna", "summary": "Día escénico en Bernina Express.", "transportReservationIds": ["bernina-express"], "accommodationReservationId": "varenna-sweet-home", "notes": ["Priorizar vistas, fotos y descanso al llegar."], "pending": ["Completar datos de Varenna Sweet Home."] },
+    { "day": 11, "date": "2026-07-28", "city": "Venecia", "route": "Varenna -> Milano Centrale -> Venecia", "summary": "Llegada a Venecia y check-in en Maison Venezia.", "transportReservationIds": [], "accommodationReservationId": "maison-venezia", "notes": ["Frecciarossa 9731 en clase Business para 4 pasajeros."], "pending": ["Asociar documento Frecciarossa 9731."] },
+    { "day": 12, "date": "2026-07-29", "city": "Venecia", "summary": "Estadia en Venecia.", "transportReservationIds": [], "accommodationReservationId": "maison-venezia", "notes": [], "pending": ["Actividades pendientes de cargar."] },
+    { "day": 13, "date": "2026-07-30", "city": "Civitavecchia", "route": "Venecia -> Roma -> Civitavecchia", "summary": "Traslado a Civitavecchia para embarcar al día siguiente.", "transportReservationIds": [], "accommodationReservationId": "la-casetta-colorata", "notes": ["Frecciarossa 9425 en clase Business. No dormir en Roma."], "pending": ["Confirmar traslado Roma -> Civitavecchia."] },
+    { "day": 14, "date": "2026-07-31", "city": "Civitavecchia", "summary": "Embarque en MSC Divina.", "transportReservationIds": ["msc-divina"], "accommodationReservationId": "msc-divina", "notes": ["Cabina 13105."], "pending": ["Horario de embarque pendiente de cargar."] },
+    { "day": 15, "date": "2026-08-01", "city": "MSC Divina", "summary": "Crucero en curso.", "transportReservationIds": [], "accommodationReservationId": "msc-divina", "notes": [], "pending": ["Escalas y actividades pendientes de cargar."] },
+    { "day": 16, "date": "2026-08-02", "city": "Mykonos", "summary": "Escala MSC Divina en Mykonos.", "transportReservationIds": [], "accommodationReservationId": "msc-divina", "notes": ["Paseo flexible; priorizar caminar, vistas, comida y agua."], "pending": ["Confirmar horario de escala y excursión."] },
+    { "day": 17, "date": "2026-08-03", "city": "Kusadasi", "summary": "Escala MSC Divina en Kusadasi.", "transportReservationIds": [], "accommodationReservationId": "msc-divina", "notes": [], "pending": ["Confirmar horario de escala y excursión."] },
+    { "day": 18, "date": "2026-08-04", "city": "Marmaris", "summary": "Escala MSC Divina en Marmaris.", "transportReservationIds": [], "accommodationReservationId": "msc-divina", "notes": ["Día costero y flexible."], "pending": ["Confirmar horario de escala."] },
+    { "day": 19, "date": "2026-08-05", "city": "MSC Divina", "summary": "Crucero en curso.", "transportReservationIds": [], "accommodationReservationId": "msc-divina", "notes": [], "pending": ["Escalas y actividades pendientes de cargar."] },
+    { "day": 20, "date": "2026-08-06", "city": "Nápoles", "summary": "Escala MSC Divina en Nápoles.", "transportReservationIds": [], "accommodationReservationId": "msc-divina", "notes": [], "pending": ["Confirmar horario de escala y excursión."] },
+    { "day": 21, "date": "2026-08-07", "city": "Roma", "route": "Civitavecchia -> Roma", "summary": "Desembarque MSC y llegada a Roma.", "transportReservationIds": ["msc-divina"], "accommodationReservationId": "cosmopolita-rome", "notes": [], "pending": ["Confirmar traslado Civitavecchia -> Roma."] },
+    { "day": 22, "date": "2026-08-08", "city": "Roma", "summary": "Coliseo Full Experience a las 15:00.", "transportReservationIds": [], "accommodationReservationId": "cosmopolita-rome", "activityReservationIds": ["colosseum"], "notes": ["Presentarse 30 minutos antes con documento de identidad."], "pending": [] },
+    { "day": 23, "date": "2026-08-09", "city": "Madrid", "route": "Roma -> Madrid", "summary": "Traslado a Madrid y check-in en Riu Plaza España.", "transportReservationIds": [], "accommodationReservationId": "riu-madrid-return", "notes": [], "pending": ["Completar vuelo Roma -> Madrid."] },
+    { "day": 24, "date": "2026-08-10", "city": "Madrid", "summary": "Último día completo en Europa.", "transportReservationIds": [], "accommodationReservationId": "riu-madrid-return", "notes": ["Compras, paseo y descanso antes del vuelo largo."], "pending": [] },
+    { "day": 25, "date": "2026-08-11", "city": "Salvador", "route": "Madrid -> Salvador", "summary": "Vuelo Air Europa UX83 y noche cerca del aeropuerto.", "transportReservationIds": ["flight-ux83"], "accommodationReservationId": "intercity-salvador", "notes": ["Retirar valijas si corresponde según conexión y aduana."], "pending": ["Boarding pass y QR pendientes futuro hasta check-in."] },
+    { "day": 26, "date": "2026-08-12", "city": "Buenos Aires", "route": "Salvador -> São Paulo -> Buenos Aires", "summary": "Regreso final por São Paulo a Aeroparque.", "transportReservationIds": ["flight-g3-1691-g3-7644"], "accommodationReservationId": "intercity-salvador", "notes": ["Llegada a Aeroparque 21:00."], "pending": ["Asociar documentos GOL."] }
   ]
 }

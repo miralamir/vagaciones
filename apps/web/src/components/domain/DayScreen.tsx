@@ -175,6 +175,10 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
             <List items={day.checklist} />
           </SectionCard>
 
+          <SectionCard title="Pendientes">
+            <List items={day.pending.length > 0 ? day.pending : ["Sin pendientes cargados."]} />
+          </SectionCard>
+
           <SectionCard title="Consejo">
             <p className="text-ink/75">{day.conciergeTip}</p>
           </SectionCard>
@@ -202,7 +206,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
 
 function FlightDetails({ flight, documents }: { flight: NonNullable<ReturnType<typeof getTripDay>["flight"]>; documents: IndexedDocument[] }) {
   const document = documents.find((item) => item.linkedReservation && flight.reservations.includes(item.linkedReservation));
-  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Vuelo</p><p className="font-black text-ink">{flight.airline} {flight.flightNumber}</p><p className="mt-1 text-sm font-bold text-ink/70">{flight.origin} a {flight.destination}</p><p className="mt-1 text-sm font-semibold text-ink/70">Sale {flight.departure} · Llega {flight.arrival}</p><p className="mt-2 text-sm font-bold text-ink">Reservas: {flight.reservations.join(" / ")}</p><div className="mt-3 grid gap-2">{flight.passengers.map((passenger) => <div className="flex items-center justify-between rounded-md bg-white px-3 py-2" key={passenger}><span className="font-bold text-ink">Reserva Air Europa {passenger}</span>{document ? <a className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" href={getViewerUrl(document)}>Mostrar PDF</a> : <a className="rounded-md bg-ink px-3 py-2 text-sm font-black text-white" href="/trips/europa-2026/documentos/revisar">Mostrar PDF</a>}</div>)}</div></div>;
+  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Vuelo</p><p className="font-black text-ink">{flight.airline} {flight.flightNumber}</p><p className="mt-1 text-sm font-bold text-ink/70">{flight.origin} a {flight.destination}</p><p className="mt-1 text-sm font-semibold text-ink/70">Sale {flight.departure} · Llega {flight.arrival}</p><p className="mt-2 text-sm font-bold text-ink">Reservas: {flight.reservations.join(" / ")}</p><div className="mt-3 grid gap-2">{flight.passengers.map((passenger) => <div className="flex items-center justify-between rounded-md bg-white px-3 py-2" key={passenger}><span className="font-bold text-ink">Reserva Air Europa {passenger}</span>{document ? <a className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" href={getViewerUrl(document)}>Mostrar PDF</a> : <span className="rounded-md bg-ink/10 px-3 py-2 text-sm font-black text-ink/60">PDF pendiente de asociar</span>}</div>)}</div></div>;
 }
 
 function List({ items }: { items: string[] }) {

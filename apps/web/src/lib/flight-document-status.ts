@@ -17,8 +17,8 @@ export type FlightDocumentStatus = {
 };
 
 export function getFlightDocumentStatuses(day: TripDay, documents: readonly IndexedDocument[], now = new Date()): FlightDocumentStatus[] {
-  return day.transport
-    .filter((transport) => /vuelo|flight/i.test(transport))
+  const flightLabels = day.flight ? [`${day.flight.airline} ${day.flight.flightNumber}`] : day.transport.filter((transport) => /vuelo|flight/i.test(transport));
+  return flightLabels
     .map((flightLabel) => getFlightDocumentStatus(day, flightLabel, documents, now));
 }
 

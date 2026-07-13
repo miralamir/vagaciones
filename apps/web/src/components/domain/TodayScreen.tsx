@@ -19,6 +19,8 @@ export function TodayScreen() {
   const nextTransport = day.transport[0] ?? "Sin transporte programado";
   const quickDocs = getQuickDocumentsForDay(day.day);
   const flightStatuses = getFlightDocumentStatuses(day, documents, context.now);
+  const previousDay = Math.max(1, day.day - 1);
+  const nextDay = Math.min(trip.totalDays, day.day + 1);
 
   useEffect(() => {
     void fetch("/api/documents/index", { cache: "no-store" })
@@ -38,6 +40,11 @@ export function TodayScreen() {
               <p className="mt-1 text-sm font-semibold text-white/70">{day.date}</p>
             </div>
             <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-ink">{context.statusLabel}</span>
+          </div>
+          <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <Link className="rounded-md bg-white/15 px-3 py-3 text-center text-sm font-black" href={`/trips/europa-2026/days/${previousDay}`} aria-disabled={day.day === 1}>Día anterior</Link>
+            <Link className="rounded-md bg-white px-3 py-3 text-center text-sm font-black text-ink" href={`/trips/europa-2026/days/${day.day}`}>Día {day.day} de {trip.totalDays}</Link>
+            <Link className="rounded-md bg-white/15 px-3 py-3 text-center text-sm font-black" href={`/trips/europa-2026/days/${nextDay}`} aria-disabled={day.day === trip.totalDays}>Día siguiente</Link>
           </div>
         </div>
 

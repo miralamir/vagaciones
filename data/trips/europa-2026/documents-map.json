@@ -1,4 +1,11 @@
 {
+  "version": 1,
   "source": "document-links.json",
-  "purpose": "Manual document associations for the trip."
+  "purpose": "Indice curado de asociaciones manuales. Los archivos se resuelven exclusivamente mediante DOCUMENT_STORAGE.",
+  "rules": {
+    "sourceOfTruth": "manual_configuration",
+    "parserRole": "experimental_only",
+    "neverStoreAbsolutePaths": true,
+    "neverStoreDocumentContents": true
+  }
 }

@@ -1,5 +1,47 @@
 import { PDFParse } from "pdf-parse";
 import itinerary from "../../data/trips/europa-2026/itinerary.json" with { type: "json" };
+import reservations from "../../data/trips/europa-2026/reservations.json" with { type: "json" };
+
+// The parser is experimental. It derives its matching index from the curated data
+// rather than defining an independent itinerary source of truth.
+const parserFlights = Object.values(
+  reservations
+    .filter((reservation) => reservation.type === "flight")
+    .reduce((groups, reservation) => {
+      const codes = [reservation.locator, ...(reservation.additionalLocators ?? [])].filter(Boolean);
+      const key = `${reservation.provider ?? ""}:${codes[0] ?? reservation.id}`;
+      const group = groups[key] ?? { id: key, provider: reservation.provider ?? "", matchCodes: codes, segments: [] };
+      group.segments.push({
+        flightNumber: reservation.flightNumber ?? null,
+        origin: reservation.origin ?? "",
+        originCity: reservation.originCity ?? reservation.origin ?? "",
+        destination: reservation.destination ?? "",
+        destinationCity: reservation.destinationCity ?? reservation.destination ?? "",
+        departureDate: dateOnly(reservation.departure ?? reservation.startDate),
+        arrivalDate: dateOnly(reservation.arrival),
+        associatedDays: reservation.associatedDays ?? []
+      });
+      groups[key] = group;
+      return groups;
+    }, {})
+);
+
+const parserReservations = reservations.map((reservation) => ({
+  id: reservation.id,
+  provider: reservation.provider,
+  matchCodes: [reservation.locator, ...(reservation.additionalLocators ?? [])].filter(Boolean),
+  terms: [reservation.provider, reservation.title, reservation.city].filter(Boolean).map((term) => term.toLowerCase()),
+  kind: reservation.type === "hotel" ? "stay" : reservation.type === "entry" ? "event" : reservation.type,
+  city: reservation.city ?? null,
+  checkIn: reservation.checkIn,
+  checkOut: reservation.checkOut,
+  eventDate: reservation.eventDate,
+  eventTime: reservation.eventTime,
+  departureDate: dateOnly(reservation.departure),
+  returnDate: dateOnly(reservation.arrival),
+  transferDate: reservation.startDate,
+  associatedDays: reservation.associatedDays ?? []
+}));
 
 const CITY_ALIASES = [
   ["Sao Paulo", ["sao paulo", "são paulo", "gru", "cgh"]],
@@ -169,7 +211,7 @@ function associateDocument({ lower, provider, flightNumbers, cities, dates, conf
 function matchItineraryFlight(provider, confirmationCode, flightNumbers) {
   const normalizedProvider = provider?.toLowerCase();
   const normalizedCode = confirmationCode?.toUpperCase();
-  return itinerary.flights.find((flight) => {
+  return parserFlights.find((flight) => {
     if (normalizedCode && flight.matchCodes.includes(normalizedCode)) return true;
     return flight.provider.toLowerCase() === normalizedProvider && flight.segments.some((segment) => segment.flightNumber && flightNumbers.includes(segment.flightNumber));
   }) ?? null;
@@ -178,7 +220,7 @@ function matchItineraryFlight(provider, confirmationCode, flightNumbers) {
 function matchItineraryReservation(provider, confirmationCode, lower) {
   const normalizedCode = confirmationCode?.toUpperCase();
   const normalizedProvider = provider?.toLowerCase();
-  return itinerary.reservations.find((reservation) =>
+  return parserReservations.find((reservation) =>
     (normalizedCode && reservation.matchCodes.includes(normalizedCode)) ||
     (reservation.provider?.toLowerCase() === normalizedProvider && reservation.terms.some((term) => lower.includes(term))) ||
     (!reservation.provider && reservation.terms.some((term) => lower.includes(term)))
@@ -240,9 +282,13 @@ function getFlightSubtype(source, containsQR) {
 
 function dayFromKnownJourney(value) {
   const parsed = new Date(`${value}T12:00:00Z`);
-  const start = new Date("2026-07-18T12:00:00Z");
+  const start = new Date(`${itinerary.trip.startDate}T12:00:00Z`);
   const difference = Math.round((parsed.getTime() - start.getTime()) / 86400000) + 1;
   return difference >= 1 && difference <= 40 ? [difference] : [];
+}
+
+function dateOnly(value) {
+  return value ? value.slice(0, 10) : null;
 }
 
 function detectProvider(lower) { const entry = PROVIDERS.find(([, terms]) => terms.some((term) => term === "gol" ? /\bgol\b/i.test(lower) : lower.includes(term))); return field(entry?.[0] ?? null, entry ? "high" : "low"); }
