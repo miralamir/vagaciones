@@ -1,0 +1,21 @@
+{
+  "name": "vagaciones",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm --filter @vagaciones/web dev",
+    "dev:local": "node scripts/dev-local.mjs",
+    "build": "pnpm --filter @vagaciones/web build",
+    "start": "pnpm --filter @vagaciones/web start",
+    "lint": "pnpm --filter @vagaciones/web lint",
+    "typecheck": "pnpm --filter @vagaciones/web typecheck",
+    "import:documents": "node scripts/import-documents.mjs",
+    "test:security": "node tests/security/document-security.test.mjs && node tests/security/document-intelligence.test.mjs",
+    "diagnose:build": "node scripts/diagnose-build.mjs"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "devDependencies": {
+    "pdf-parse": "2.4.5",
+    "turbo": "^2.3.3"
+  }
+}

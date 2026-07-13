@@ -1,0 +1,49 @@
+{
+  "tripSlug": "europa-2026",
+  "flights": [
+    {
+      "id": "flight-gru-mad",
+      "provider": "Air Europa",
+      "matchCodes": ["9NSADF"],
+      "segments": [
+        { "flightNumber": "UX58", "origin": "GRU", "originCity": "Sao Paulo", "destination": "MAD", "destinationCity": "Madrid", "departureDate": "2026-07-20", "arrivalDate": "2026-07-21", "associatedDays": [3, 4] },
+        { "flightNumber": "UX83", "origin": "MAD", "originCity": "Madrid", "destination": "SSA", "destinationCity": "Salvador", "departureDate": "2026-08-11", "arrivalDate": null, "associatedDays": [25] }
+      ]
+    },
+    {
+      "id": "flight-eze-igu",
+      "provider": "Aerolíneas Argentinas",
+      "matchCodes": ["AIGHSA"],
+      "segments": [
+        { "flightNumber": null, "origin": "EZE", "originCity": "Buenos Aires", "destination": "IGU", "destinationCity": "Iguazu", "departureDate": "2026-07-18", "arrivalDate": null, "associatedDays": [1] }
+      ]
+    },
+    {
+      "id": "flight-igu-cgh",
+      "provider": "GOL",
+      "matchCodes": ["GUFHND"],
+      "segments": [
+        { "flightNumber": "G3 1123", "origin": "IGU", "originCity": "Iguazu", "destination": "CGH", "destinationCity": "Sao Paulo", "departureDate": null, "arrivalDate": null, "associatedDays": [] }
+      ]
+    },
+    {
+      "id": "flight-ssa-aep",
+      "provider": "GOL",
+      "matchCodes": [],
+      "segments": [
+        { "flightNumber": "G3 1691", "origin": "SSA", "originCity": "Salvador", "destination": "GRU", "destinationCity": "Sao Paulo", "departureDate": null, "arrivalDate": null, "associatedDays": [] },
+        { "flightNumber": "G3 7644", "origin": "GRU", "originCity": "Sao Paulo", "destination": "AEP", "destinationCity": "Buenos Aires", "departureDate": null, "arrivalDate": null, "associatedDays": [] }
+      ]
+    }
+  ],
+  "reservations": [
+    { "id": "maison-venezia", "provider": "Maison Venezia | UNA Esperienze", "matchCodes": ["47875SG007033"], "terms": ["maison venezia", "una esperienze"], "kind": "stay", "city": "Venecia", "checkIn": "2026-07-28", "checkOut": "2026-07-30", "associatedDays": [11, 12, 13] },
+    { "id": "terminus-lyon", "provider": "Hotel Terminus Lyon", "matchCodes": ["SCKUTW"], "terms": ["terminus lyon"], "kind": "stay", "city": "Paris", "checkIn": "2026-07-24", "checkOut": "2026-07-26", "associatedDays": [7, 8, 9] },
+    { "id": "riu-madrid", "provider": "Riu Hotels & Resorts", "matchCodes": ["WRC3HKDD", "WRC386HV"], "terms": ["riu plaza"], "kind": "stay", "city": "Madrid", "checkIn": "2026-08-09", "checkOut": "2026-08-11", "associatedDays": [23, 24, 25] },
+    { "id": "msc-divina", "provider": "MSC", "matchCodes": ["67652452"], "terms": ["msc divina", "cabin 13105", "cabina 13105"], "kind": "cruise", "city": "Civitavecchia", "departureDate": "2026-07-31", "returnDate": "2026-08-07", "associatedDays": [14, 15, 16, 17, 18, 19, 20, 21] },
+    { "id": "colosseum", "provider": "Colosseum", "matchCodes": ["GPCO4V6Z5LLAX4EV"], "terms": ["colosseum", "coliseo", "underground", "arena"], "kind": "event", "city": "Roma", "eventDate": "2026-08-08", "associatedDays": [22] },
+    { "id": "lindt", "provider": "Lindt Home of Chocolate", "matchCodes": ["64954460"], "terms": ["lindt"], "kind": "event", "city": "Zurich", "eventDate": "2026-07-26", "eventTime": "17:00", "associatedDays": [9] },
+    { "id": "varenna-como", "provider": "Booking.com", "matchCodes": [], "terms": ["varrena dicomo", "varenna", "lago di como"], "kind": "stay", "city": "Varenna", "checkIn": "2026-07-27", "checkOut": "2026-07-28", "associatedDays": [10, 11] },
+    { "id": "salvador-airport-transfer", "provider": null, "matchCodes": [], "terms": ["slvador aeopuert", "salvador aeropuerto"], "kind": "transfer", "city": "Salvador", "transferDate": "2026-08-11", "associatedDays": [25, 26] }
+  ]
+}

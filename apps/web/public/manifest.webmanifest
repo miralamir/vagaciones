@@ -1,0 +1,11 @@
+{
+  "name": "VAGACIONES",
+  "short_name": "VAGACIONES",
+  "description": "Administrador personal de viajes",
+  "start_url": "/trips/europa-2026",
+  "display": "standalone",
+  "background_color": "#f7f2ea",
+  "theme_color": "#1b7f83",
+  "lang": "es-AR",
+  "icons": []
+}

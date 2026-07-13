@@ -1,0 +1,36 @@
+node_modules/
+.next/
+.next-build/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+
+*.log
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.DS_Store
+Thumbs.db
+
+# Real travel documents can contain private data. Keep binaries out of Git.
+data/trips/*/pdfs/**
+data/trips/*/documents/**
+data/trips/*/qr/**
+!data/trips/*/pdfs/.gitkeep
+!data/trips/*/documents/.gitkeep
+!data/trips/*/qr/.gitkeep
+
+# Private ingestion area for real travel files. Never commit this.
+.private/
+
+# Import reports may include original filenames and hashes.
+data/trips/*/document-review.json
+data/trips/*/document-import-report.json
+data/trips/*/document-index.json

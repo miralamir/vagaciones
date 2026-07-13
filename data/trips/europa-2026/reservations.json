@@ -1,0 +1,23 @@
+[
+  {
+    "id": "flight-ux58",
+    "type": "flight",
+    "provider": "Air Europa",
+    "flightNumber": "UX58",
+    "origin": "GRU",
+    "destination": "MAD",
+    "departure": "2026-07-20T13:50:00-03:00",
+    "arrival": "2026-07-21T05:00:00+02:00",
+    "reservationCodes": ["9NSADF", "XLQGKJ"],
+    "associatedDays": [3, 4]
+  },
+  {
+    "id": "flight-ux83",
+    "type": "flight",
+    "provider": "Air Europa",
+    "flightNumber": "UX83",
+    "origin": "MAD",
+    "destination": "SSA",
+    "associatedDays": [25]
+  }
+]

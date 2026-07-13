@@ -1,0 +1,58 @@
+[
+  {
+    "id": "air-europa-9nsadf-mariano",
+    "fileName": "9NSADF - MARIANO FRANZE.pdf",
+    "title": "Air Europa UX58 / UX83 - Mariano Franze",
+    "type": "flight_reservation",
+    "provider": "Air Europa",
+    "reservationCode": "9NSADF",
+    "passenger": "Mariano Franze",
+    "associatedDays": [3, 4, 25],
+    "relatedReservationIds": ["flight-ux58", "flight-ux83"],
+    "sensitivity": "highly_sensitive",
+    "requiresConfirmation": true,
+    "notes": "Reserva/e-ticket. Boarding pass y QR estaran disponibles despues del check-in."
+  },
+  {
+    "id": "air-europa-9nsadf-nadia",
+    "fileName": "9NSADF - MARIANO FRANZE.pdf",
+    "title": "Air Europa UX58 / UX83 - Nadia",
+    "type": "flight_reservation",
+    "provider": "Air Europa",
+    "reservationCode": "9NSADF",
+    "passenger": "Nadia",
+    "associatedDays": [3, 4, 25],
+    "relatedReservationIds": ["flight-ux58", "flight-ux83"],
+    "sensitivity": "highly_sensitive",
+    "requiresConfirmation": true,
+    "notes": "Reserva/e-ticket compartida."
+  },
+  {
+    "id": "air-europa-9nsadf-leon",
+    "fileName": "9NSADF - MARIANO FRANZE.pdf",
+    "title": "Air Europa UX58 / UX83 - Leon",
+    "type": "flight_reservation",
+    "provider": "Air Europa",
+    "reservationCode": "9NSADF",
+    "passenger": "Leon",
+    "associatedDays": [3, 4, 25],
+    "relatedReservationIds": ["flight-ux58", "flight-ux83"],
+    "sensitivity": "highly_sensitive",
+    "requiresConfirmation": true,
+    "notes": "Reserva/e-ticket compartida."
+  },
+  {
+    "id": "air-europa-9nsadf-bruno",
+    "fileName": "9NSADF - MARIANO FRANZE.pdf",
+    "title": "Air Europa UX58 / UX83 - Bruno",
+    "type": "flight_reservation",
+    "provider": "Air Europa",
+    "reservationCode": "9NSADF",
+    "passenger": "Bruno",
+    "associatedDays": [3, 4, 25],
+    "relatedReservationIds": ["flight-ux58", "flight-ux83"],
+    "sensitivity": "highly_sensitive",
+    "requiresConfirmation": true,
+    "notes": "Reserva/e-ticket compartida."
+  }
+]

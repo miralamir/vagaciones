@@ -1,0 +1,4 @@
+{
+  "travelers": ["Mariano Franze", "Nadia", "Leon", "Bruno"],
+  "documentHandling": { "confirmSensitiveDocuments": true }
+}
