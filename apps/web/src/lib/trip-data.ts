@@ -197,7 +197,7 @@ export const tripDays: TripDay[] = curatedDays.map((day, index) => {
     transport: transportReservations.map((reservation) => reservation.title),
     hotel: accommodation?.type === "hotel" || accommodation?.type === "cruise" ? toHotel(accommodation) : undefined,
     activities: activities.length > 0 ? activities.map((reservation) => reservation.title) : [day.summary],
-    checklist: ["Documentos asociados", "Bateria externa", "Agua"],
+    checklist: ["Documentos asociados", "Cargadores de celular", "Cables USB"],
     reminders: [...day.notes, ...day.pending],
     conciergeTip: "Revisa los horarios y documentos cargados antes de salir.",
     documents: [],

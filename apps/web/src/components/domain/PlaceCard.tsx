@@ -22,7 +22,7 @@ const typeLabels: Record<Place["type"], string> = {
   other: "Lugar util"
 };
 
-export function PlaceCard({ place }: { place: Place }) {
+export function PlaceCard({ place, onDelete }: { place: Place; onDelete?: () => void }) {
   const mapsAvailable = place.actions.maps && !place.privateLocationKey;
   const uberAvailable = canRequestUber(place);
   const destination = place.address ?? `${place.name}, ${place.city}`;
@@ -40,6 +40,7 @@ export function PlaceCard({ place }: { place: Place }) {
       {mapsAvailable ? <RiskConfirmationDialog action="Abrir lugar" dataShared={destination} destination="Google Maps" consequence="Se abrira una aplicacion externa con este lugar." onConfirm={() => openExternalUrl(getPlaceMapsUrl(place))}>{(open) => <button className="rounded-md bg-sea px-3 py-3 text-sm font-black text-white" onClick={open} type="button">Abrir Maps</button>}</RiskConfirmationDialog> : null}
       {uberAvailable ? <RiskConfirmationDialog action="Pedir Uber" dataShared={destination} destination="Uber" consequence="Vas a abrir Uber con este destino. Revisa direccion, horario y tarifa antes de confirmar el viaje." onConfirm={() => openUberToDestination(destination)}>{(open) => <button className="rounded-md bg-ink px-3 py-3 text-sm font-black text-white" onClick={open} type="button">Pedir Uber</button>}</RiskConfirmationDialog> : null}
       {place.actions.call && place.phone ? <RiskConfirmationDialog action="Llamar" dataShared={place.phone} destination="Telefono" consequence="Se iniciara una llamada desde el dispositivo." onConfirm={() => { window.location.href = `tel:${place.phone}`; }}>{(open) => <button className="rounded-md bg-coral px-3 py-3 text-sm font-black text-white" onClick={open} type="button">Llamar</button>}</RiskConfirmationDialog> : null}
+      {onDelete ? <button className="rounded-md px-3 py-3 text-sm font-black text-coral" onClick={onDelete} type="button">Borrar</button> : null}
     </div>
   </div>;
 }

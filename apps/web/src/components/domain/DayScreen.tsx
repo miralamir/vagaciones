@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getDocumentsForDay, getTripGlobalDocuments, getViewerUrl } from "@/lib/documents";
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
 import { getPlacesForDay } from "@/lib/places";
+import { getPersonalPlaces, type PersonalPlace } from "@/lib/personal-places";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
@@ -23,6 +24,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [approvedDocuments, setApprovedDocuments] = useState<IndexedDocument[]>([]);
+  const [personalPlaces, setPersonalPlaces] = useState<PersonalPlace[]>([]);
 
   const previousDay = Math.max(day.day - 1, 1);
   const nextDay = Math.min(day.day + 1, trip.totalDays);
@@ -36,7 +38,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const documentList = useMemo(() => getDocumentsForDay(day.day, approvedDocuments), [approvedDocuments, day.day]);
   const globalDocumentList = useMemo(() => getTripGlobalDocuments(approvedDocuments), [approvedDocuments]);
   const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments);
-  const dayPlaces = useMemo(() => getPlacesForDay(day.day), [day.day]);
+  const dayPlaces = useMemo(() => [...getPlacesForDay(day.day), ...personalPlaces.filter((place) => place.relatedDays.includes(day.day))], [day.day, personalPlaces]);
   const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
   const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
 
@@ -46,6 +48,8 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
       .then((index: DocumentIndex) => setApprovedDocuments([...index.documents]))
       .catch(() => setApprovedDocuments([]));
   }, []);
+
+  useEffect(() => { setPersonalPlaces(getPersonalPlaces()); }, []);
 
   return (
     <AppShell>
@@ -188,9 +192,9 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
             {dayPlaces.length > 0 ? <div className="grid gap-3">{dayPlaces.map((place) => <PlaceCard key={place.id} place={place} />)}</div> : <p className="text-ink/65">Lugares pendientes de cargar.</p>}
           </SectionCard>
 
-          <SectionCard title="Checklist">
+          <div id="checklist"><SectionCard title="Checklist">
             <Checklist day={initialDay} items={checklistItems.length ? checklistItems : day.checklist.map((label, index) => ({ id: `day-${day.day}-${index}`, label, priority: "medium" }))} />
-          </SectionCard>
+          </SectionCard></div>
 
           <SectionCard title="Pendientes">
             <List items={day.pending.length > 0 ? day.pending : ["Sin pendientes cargados."]} />

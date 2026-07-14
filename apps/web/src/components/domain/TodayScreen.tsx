@@ -7,6 +7,7 @@ import checklists from "../../../../../data/trips/europa-2026/checklists.json";
 import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { canRequestUber, getPlaceMapsUrl, getPlacesForDay, type Place } from "@/lib/places";
+import { getPersonalChecklistItems, type PersonalChecklistItem } from "@/lib/personal-checklists";
 import { getNextTransfer, getTripToday } from "@/lib/trip-today";
 import { getStatusLabel } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
@@ -21,11 +22,12 @@ export function TodayScreen() {
   const [now, setNow] = useState(() => new Date());
   const [documents, setDocuments] = useState<IndexedDocument[]>([]);
   const [completedChecklist, setCompletedChecklist] = useState<string[]>([]);
+  const [personalChecklist, setPersonalChecklist] = useState<PersonalChecklistItem[]>([]);
   const today = getTripToday(now, Number.isInteger(override) && override > 0 ? override : undefined);
   const day = today.activeDay;
   const nextTransfer = getNextTransfer(day, today.departurePlan);
   const quickDocuments = useMemo(() => sortDocuments(getDocumentsForDay(day.day, documents)).slice(0, 5), [day.day, documents]);
-  const urgentChecklist = useMemo(() => getUrgentChecklist(day.day, completedChecklist), [completedChecklist, day.day]);
+  const urgentChecklist = useMemo(() => getUrgentChecklist(day.day, completedChecklist, personalChecklist), [completedChecklist, day.day, personalChecklist]);
   const usefulPlaces = useMemo(() => getPlacesForDay(day.day).sort((a, b) => placeRank(a, day.reservationIds) - placeRank(b, day.reservationIds)).slice(0, 4), [day.day, day.reservationIds]);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function TodayScreen() {
     } catch {
       setCompletedChecklist([]);
     }
+    setPersonalChecklist(getPersonalChecklistItems(day.day));
   }, [day.day]);
 
   if (today.tripPhase === "before_trip") return <BeforeTrip daysUntilStart={today.daysUntilStart} />;
@@ -54,7 +57,7 @@ export function TodayScreen() {
   return <AppShell><section className="grid gap-3">
     <div className="rounded-lg bg-ink p-5 text-white shadow-sm"><p className="text-xs font-black uppercase tracking-wide text-white/60">Modo Hoy</p><h2 className="mt-1 text-2xl font-black">Hoy: Dia {day.day} - {day.date}</h2><p className="mt-1 text-lg font-bold text-white/80">{day.city}</p><p className="mt-3 inline-flex rounded-md bg-white/15 px-3 py-2 text-sm font-black">{getStatusLabel(day.status)}</p><p className="mt-3 text-sm font-semibold text-white/75">{day.nextEvent}</p></div>
 
-    <SectionCard title="Proximo traslado"><div className="grid gap-2"><p className="text-lg font-black text-ink">{nextTransfer.title}</p><p className="text-sm font-black uppercase tracking-wide text-sea">{nextTransfer.type} - {nextTransfer.status}</p><p className="text-sm font-semibold text-ink/70">Hora: {nextTransfer.time}</p>{nextTransfer.reservation?.locator ? <p className="text-sm font-semibold text-ink/70">Reserva: {nextTransfer.reservation.locator}</p> : null}</div></SectionCard>
+    {nextTransfer.type !== "pendiente" || today.departurePlan ? <SectionCard title="Proximo traslado"><div className="grid gap-2"><p className="text-lg font-black text-ink">{nextTransfer.title}</p><p className="text-sm font-black uppercase tracking-wide text-sea">{nextTransfer.type} - {nextTransfer.status}</p><p className="text-sm font-semibold text-ink/70">Hora: {nextTransfer.time}</p>{nextTransfer.reservation?.locator ? <p className="text-sm font-semibold text-ink/70">Reserva: {nextTransfer.reservation.locator}</p> : null}</div></SectionCard> : <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p>}
 
     {today.departurePlan ? <SectionCard title="Salir"><div className="grid grid-cols-3 gap-2 text-center"><Time label="Ideal" value={today.departurePlan.idealDepartureTime} /><Time label="Comoda" value={today.departurePlan.comfortableDepartureTime} /><Time label="Limite" value={today.departurePlan.latestDepartureTime} /></div><p className="mt-3 text-sm font-semibold text-ink/70">{today.departurePlan.notes}</p></SectionCard> : null}
 
@@ -67,7 +70,7 @@ export function TodayScreen() {
 
 function BeforeTrip({ daysUntilStart }: { daysUntilStart: number }) {
   const checklist = getUrgentChecklist(0, []);
-  return <AppShell><section className="grid gap-3"><div className="rounded-lg bg-ink p-5 text-white shadow-sm"><p className="text-xs font-black uppercase tracking-wide text-white/60">Modo Viaje</p><h2 className="mt-1 text-2xl font-black">Faltan {daysUntilStart} dias para el viaje</h2><p className="mt-3 text-sm font-semibold text-white/75">Proximo hito: Dia 1 - salida a Iguazu / Foz.</p></div><SectionCard title="Checklist pre-viaje"><ul className="grid gap-2">{checklist.map((item) => <li className="rounded-md bg-mist px-3 py-3 font-semibold text-ink" key={item.id}>{item.label}</li>)}</ul></SectionCard><div className="grid grid-cols-2 gap-2"><Link className="rounded-md bg-sea px-4 py-4 text-center font-black text-white" href="/trips/europa-2026/days/0">Ver Dia 0</Link><Link className="rounded-md bg-ink px-4 py-4 text-center font-black text-white" href="/trips/europa-2026/days/1">Ver Dia 1</Link><Link className="rounded-md bg-white px-4 py-4 text-center font-black text-ink" href="/trips/europa-2026/documentos">Documentos</Link><Link className="rounded-md bg-white px-4 py-4 text-center font-black text-ink" href="/trips/europa-2026/mapa">Mapa</Link></div></section></AppShell>;
+  return <AppShell><section className="grid gap-3"><div className="rounded-lg bg-ink p-5 text-white shadow-sm"><p className="text-xs font-black uppercase tracking-wide text-white/60">Modo Viaje</p><h2 className="mt-1 text-2xl font-black">Faltan {daysUntilStart} dias para el viaje</h2><p className="mt-3 text-sm font-semibold text-white/75">Proximo hito: Dia 1 - salida a Iguazu / Foz.</p></div><SectionCard title="Checklist pre-viaje"><ul className="grid gap-2">{checklist.map((item) => <li className="rounded-md bg-mist px-3 py-3 font-semibold text-ink" key={item.id}>{item.label}</li>)}</ul></SectionCard><div className="grid grid-cols-2 gap-2"><Link className="rounded-md bg-sea px-4 py-4 text-center font-black text-white" href="/trips/europa-2026/days/0#checklist">Ver checklist previa</Link><Link className="rounded-md bg-ink px-4 py-4 text-center font-black text-white" href="/trips/europa-2026/days/0">Ver Dia 0</Link><Link className="rounded-md bg-white px-4 py-4 text-center font-black text-ink" href="/trips/europa-2026/days/1">Ver Dia 1</Link><Link className="rounded-md bg-white px-4 py-4 text-center font-black text-ink" href="/trips/europa-2026/documentos">Documentos</Link><Link className="rounded-md bg-white px-4 py-4 text-center font-black text-ink" href="/trips/europa-2026/mapa">Mapa</Link></div></section></AppShell>;
 }
 
 function AfterTrip() {
@@ -91,9 +94,9 @@ function QuickPlace({ place }: { place: Place }) {
 
 function Time({ label, value }: { label: string; value: string }) { return <div className="rounded-md bg-mist px-2 py-3"><p className="text-[10px] font-black uppercase text-sea">{label}</p><p className="mt-1 font-black text-ink">{value}</p></div>; }
 
-function getUrgentChecklist(day: number, completed: string[]) {
+function getUrgentChecklist(day: number, completed: string[], personalItems: ChecklistItem[] = []) {
   const source = (checklists.byDay[String(day) as keyof typeof checklists.byDay] ?? []) as ChecklistItem[];
-  return source.filter((item) => !completed.includes(item.id)).sort((a, b) => priorityRank(a.priority) - priorityRank(b.priority)).slice(0, 5);
+  return [...source, ...personalItems].filter((item) => !completed.includes(item.id)).sort((a, b) => priorityRank(a.priority) - priorityRank(b.priority)).slice(0, 5);
 }
 
 function sortDocuments(documents: IndexedDocument[]) { return [...documents].sort((a, b) => documentRank(a) - documentRank(b)); }
