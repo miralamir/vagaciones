@@ -19,6 +19,8 @@ function legacyKeyForDay(day: number) {
 }
 
 function readStore(): PersonalChecklistStore {
+  if (typeof window === "undefined") return {};
+
   try {
     const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as unknown;
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as PersonalChecklistStore;
@@ -41,7 +43,14 @@ export function getPersonalChecklistItems(day: number) {
 }
 
 export function savePersonalChecklistItems(day: number, items: PersonalChecklistItem[]) {
+  if (typeof window === "undefined") return false;
+
   const store = readStore();
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...store, [String(day)]: items }));
-  window.dispatchEvent(new Event(PERSONAL_CHECKLISTS_CHANGED));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...store, [String(day)]: items }));
+    window.dispatchEvent(new Event(PERSONAL_CHECKLISTS_CHANGED));
+    return true;
+  } catch {
+    return false;
+  }
 }
