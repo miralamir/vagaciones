@@ -7,6 +7,8 @@
     "idealDepartureTime": "04:00",
     "comfortableDepartureTime": "04:30",
     "latestDepartureTime": "05:00",
+    "transportDepartureTime": "07:35",
+    "recommendedArrival": "Recomendado estar en Ezeiza: 05:30 aprox.",
     "notes": "Vuelo nacional 07:35. Direccion de Casa fuera de Git.",
     "relatedReservationIds": ["flight-eze-igr"],
     "riskLevel": "medium"
@@ -19,6 +21,8 @@
     "idealDepartureTime": "09:45",
     "comfortableDepartureTime": "10:15",
     "latestDepartureTime": "10:45",
+    "transportDepartureTime": "13:50",
+    "recommendedArrival": "Recomendado estar en GRU: 10:50 aprox.",
     "notes": "Confirmar horario del shuttle con recepcion.",
     "relatedReservationIds": ["flight-ux58", "panamby-guarulhos"],
     "riskLevel": "medium"
@@ -31,6 +35,8 @@
     "idealDepartureTime": "09:15",
     "comfortableDepartureTime": "09:30",
     "latestDepartureTime": "09:45",
+    "transportDepartureTime": "10:22",
+    "recommendedArrival": "Recomendado estar en Gare de Lyon: 09:45 aprox.",
     "notes": "El tren sale a las 10:22.",
     "relatedReservationIds": ["tgv-lyria-paris-basel", "terminus-lyon"],
     "riskLevel": "medium"
@@ -43,6 +49,8 @@
     "idealDepartureTime": "13:45",
     "comfortableDepartureTime": "14:00",
     "latestDepartureTime": "14:15",
+    "transportDepartureTime": "15:00",
+    "recommendedArrival": "Recomendado llegar al Coliseo: 14:30 aprox.",
     "notes": "Entrada 15:00. Llegar 30 minutos antes.",
     "relatedReservationIds": ["colosseum", "cosmopolita-rome"],
     "riskLevel": "high"
@@ -55,6 +63,8 @@
     "idealDepartureTime": "11:30",
     "comfortableDepartureTime": "12:00",
     "latestDepartureTime": "12:30",
+    "transportDepartureTime": "15:25",
+    "recommendedArrival": "Recomendado estar en MAD T1: 12:25 aprox.",
     "notes": "Vuelo Air Europa UX83 sale a las 15:25.",
     "relatedReservationIds": ["flight-ux83", "riu-madrid-return"],
     "riskLevel": "medium"

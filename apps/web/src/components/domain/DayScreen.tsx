@@ -8,6 +8,7 @@ import { getPlacesForDay } from "@/lib/places";
 import { getPersonalPlaces, type PersonalPlace } from "@/lib/personal-places";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
+import { getTimeRecommendation } from "@/lib/trip-today";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
 import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
@@ -40,7 +41,9 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments);
   const dayPlaces = useMemo(() => [...getPlacesForDay(day.day), ...personalPlaces.filter((place) => place.relatedDays.includes(day.day))], [day.day, personalPlaces]);
   const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
+  const trainReservations = reservations.filter((reservation) => reservation.type === "tren" && day.reservationIds.includes(reservation.id));
   const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
+  const timeRecommendation = getTimeRecommendation(day);
 
   useEffect(() => {
     void fetch("/api/documents/index", { cache: "no-store" })
@@ -121,6 +124,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
               {contractedTransfers.map((transfer) => <div className="rounded-md border border-black/10 bg-mist p-3" key={transfer.id}><p className="text-xs font-black uppercase text-sea">Traslado contratado</p><p className="mt-1 font-black text-ink">{transfer.title}</p><p className="mt-2 text-sm font-semibold text-ink/70">{transfer.meetingPoint ?? "Punto de encuentro pendiente"}</p><p className="mt-1 text-sm font-semibold text-ink/70">Voucher pendiente de asociar</p><p className="mt-2 text-sm font-bold text-ink">Buscar chofer / cartel / punto de encuentro. Tener voucher a mano.</p></div>)}
               {day.reservationIds.includes("transfer-home-eze") ? <div className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">Casa → Aeropuerto Ezeiza. Configurar dirección de casa para pedir Uber.</div> : null}
               {day.flight ? <FlightDetails flight={day.flight} documents={approvedDocuments} /> : null}
+              {trainReservations.map((train) => <TrainDetails key={train.id} train={train} />)}
               <RiskConfirmationDialog
                 action="Abrir traslado"
                 dataShared={day.transfer.destination}
@@ -132,6 +136,15 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
               </RiskConfirmationDialog>
             </div>
           </SectionCard>
+
+          {timeRecommendation ? <SectionCard title="Recomendacion de tiempo">
+            <div className="grid gap-2">
+              {timeRecommendation.transportDepartureTime ? <p className="font-black text-ink">Salida del transporte: {timeRecommendation.transportDepartureTime}</p> : null}
+              {timeRecommendation.recommendedArrival ? <p className="font-black text-sea">{timeRecommendation.recommendedArrival}</p> : null}
+              {timeRecommendation.idealDepartureTime && timeRecommendation.comfortableDepartureTime && timeRecommendation.latestDepartureTime ? <div className="grid grid-cols-3 gap-2 text-center"><TimeRecommendation label="Ideal" value={timeRecommendation.idealDepartureTime} /><TimeRecommendation label="Comoda" value={timeRecommendation.comfortableDepartureTime} /><TimeRecommendation label="Limite" value={timeRecommendation.latestDepartureTime} /></div> : null}
+              <p className={timeRecommendation.pending ? "font-bold text-coral" : "text-sm font-semibold text-ink/70"}>{timeRecommendation.note}</p>
+            </div>
+          </SectionCard> : null}
 
           <SectionCard title="Hotel">
             {day.hotel ? (
@@ -232,6 +245,10 @@ function FlightDetails({ flight, documents }: { flight: NonNullable<ReturnType<t
   return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Vuelo</p><p className="font-black text-ink">{flight.airline} {flight.flightNumber}</p><p className="mt-1 text-sm font-bold text-ink/70">{flight.origin} a {flight.destination}</p><p className="mt-1 text-sm font-semibold text-ink/70">Sale {flight.departure} · Llega {flight.arrival}</p><p className="mt-2 text-sm font-bold text-ink">Reserva: {flight.reservations.join(" / ")}</p><div className="mt-3 flex items-center justify-between rounded-md bg-white px-3 py-2"><span className="font-bold text-ink">Reserva / e-ticket</span>{document ? <a className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" href={getViewerUrl(document)}>Mostrar reserva</a> : <span className="text-sm font-black text-ink/60">Reserva PDF pendiente de asociar</span>}</div></div>;
 }
 
+function TrainDetails({ train }: { train: (typeof reservations)[number] }) {
+  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Tren</p><p className="font-black text-ink">{train.provider ?? "Operador pendiente"}</p><p className="mt-1 text-sm font-bold text-ink/70">{train.title}</p><p className="mt-1 text-sm font-semibold text-ink/70">{train.date === "Fecha pendiente" ? "Horario pendiente" : `Salida: ${train.date}`}</p>{train.locator ? <p className="mt-2 text-sm font-bold text-ink">Referencia: {train.locator}</p> : null}{train.seats.length > 0 ? <p className="mt-1 text-sm font-bold text-ink">{train.seats.join(" · ")}</p> : null}{train.pending.length > 0 ? <p className="mt-2 text-sm font-semibold text-coral">{train.pending.join(" ")}</p> : null}</div>;
+}
+
 function List({ items }: { items: string[] }) {
   return (
     <ul className="grid gap-2">
@@ -240,6 +257,10 @@ function List({ items }: { items: string[] }) {
       ))}
     </ul>
   );
+}
+
+function TimeRecommendation({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-md bg-mist px-2 py-3"><p className="text-[10px] font-black uppercase text-sea">{label}</p><p className="mt-1 font-black text-ink">{value}</p></div>;
 }
 
 function DocumentDayLink({ document, onOpen }: { document: IndexedDocument; onOpen: () => void }) {

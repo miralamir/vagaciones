@@ -11,6 +11,8 @@ export type DeparturePlan = {
   idealDepartureTime: string;
   comfortableDepartureTime: string;
   latestDepartureTime: string;
+  transportDepartureTime?: string;
+  recommendedArrival?: string;
   notes: string;
   relatedReservationIds: string[];
   riskLevel: "medium" | "high";
@@ -32,6 +34,16 @@ export type NextTransfer = {
   time: string;
   reservation: Reservation | undefined;
   status: "confirmado" | "pendiente" | "futuro esperado";
+};
+
+export type TimeRecommendation = {
+  transportDepartureTime?: string;
+  recommendedArrival?: string;
+  idealDepartureTime?: string;
+  comfortableDepartureTime?: string;
+  latestDepartureTime?: string;
+  note: string;
+  pending: boolean;
 };
 
 export const departurePlans = departurePlansData as DeparturePlan[];
@@ -71,6 +83,40 @@ export function getNextTransfer(day: TripDay, departurePlan?: DeparturePlan): Ne
   if (!reservation) return { title: day.nextEvent, type: "pendiente", time: "Pendiente", reservation: undefined, status: "pendiente" };
   const type = reservation.type === "vuelo" ? "vuelo" : reservation.type === "tren" ? "tren" : reservation.transferMode === "contracted_transfer" ? "traslado contratado" : "pendiente";
   return { title: reservation.title, type, time: reservation.date === "Fecha pendiente" ? "Pendiente" : reservation.date, reservation, status: reservation.status === "confirmada" ? "confirmado" : "pendiente" };
+}
+
+export function getTimeRecommendation(day: TripDay): TimeRecommendation | undefined {
+  const departurePlan = departurePlans.find((plan) => plan.dayNumber === day.day);
+  if (departurePlan) return {
+    transportDepartureTime: departurePlan.transportDepartureTime,
+    recommendedArrival: departurePlan.recommendedArrival,
+    idealDepartureTime: departurePlan.idealDepartureTime,
+    comfortableDepartureTime: departurePlan.comfortableDepartureTime,
+    latestDepartureTime: departurePlan.latestDepartureTime,
+    note: departurePlan.notes,
+    pending: false
+  };
+
+  if (day.day === 11) return { note: "Frecciarossa 9731 confirmado. Horario pendiente: falta calcular salida recomendada.", pending: true };
+  if (day.day === 13) return { note: "Frecciarossa 9425 confirmado. Horario pendiente: falta calcular salida recomendada.", pending: true };
+
+  const reservation = day.reservationIds.map((id) => reservations.find((item) => item.id === id)).find((item) => item?.type === "tren");
+  if (!reservation) return undefined;
+
+  const transportDepartureTime = extractTime(reservation.departure);
+  if (!transportDepartureTime) return { note: "Horario pendiente: falta calcular salida recomendada.", pending: true };
+
+  return {
+    transportDepartureTime,
+    recommendedArrival: "Recomendado estar en estacion 45 minutos antes.",
+    note: "Tren importante: llegar con margen.",
+    pending: false
+  };
+}
+
+function extractTime(value: string | undefined) {
+  const match = value?.match(/T(\d{2}:\d{2})/);
+  return match?.[1];
 }
 
 function localDateISO(now: Date) {

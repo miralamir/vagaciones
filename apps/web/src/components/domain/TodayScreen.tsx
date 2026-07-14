@@ -7,7 +7,7 @@ import checklists from "../../../../../data/trips/europa-2026/checklists.json";
 import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { canRequestUber, getPlaceMapsUrl, getPlacesForDay, type Place } from "@/lib/places";
-import { getPersonalChecklistItems, type PersonalChecklistItem } from "@/lib/personal-checklists";
+import { getPersonalChecklistItems, PERSONAL_CHECKLISTS_CHANGED, type PersonalChecklistItem } from "@/lib/personal-checklists";
 import { getNextTransfer, getTripToday } from "@/lib/trip-today";
 import { getStatusLabel } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
@@ -51,15 +51,21 @@ export function TodayScreen() {
     setPersonalChecklist(getPersonalChecklistItems(day.day));
   }, [day.day]);
 
+  useEffect(() => {
+    const refreshPersonalChecklist = () => setPersonalChecklist(getPersonalChecklistItems(day.day));
+    window.addEventListener(PERSONAL_CHECKLISTS_CHANGED, refreshPersonalChecklist);
+    return () => window.removeEventListener(PERSONAL_CHECKLISTS_CHANGED, refreshPersonalChecklist);
+  }, [day.day]);
+
   if (today.tripPhase === "before_trip") return <BeforeTrip daysUntilStart={today.daysUntilStart} />;
   if (today.tripPhase === "after_trip") return <AfterTrip />;
 
   return <AppShell><section className="grid gap-3">
     <div className="rounded-lg bg-ink p-5 text-white shadow-sm"><p className="text-xs font-black uppercase tracking-wide text-white/60">Modo Hoy</p><h2 className="mt-1 text-2xl font-black">Hoy: Dia {day.day} - {day.date}</h2><p className="mt-1 text-lg font-bold text-white/80">{day.city}</p><p className="mt-3 inline-flex rounded-md bg-white/15 px-3 py-2 text-sm font-black">{getStatusLabel(day.status)}</p><p className="mt-3 text-sm font-semibold text-white/75">{day.nextEvent}</p></div>
 
-    {nextTransfer.type !== "pendiente" || today.departurePlan ? <SectionCard title="Proximo traslado"><div className="grid gap-2"><p className="text-lg font-black text-ink">{nextTransfer.title}</p><p className="text-sm font-black uppercase tracking-wide text-sea">{nextTransfer.type} - {nextTransfer.status}</p><p className="text-sm font-semibold text-ink/70">Hora: {nextTransfer.time}</p>{nextTransfer.reservation?.locator ? <p className="text-sm font-semibold text-ink/70">Reserva: {nextTransfer.reservation.locator}</p> : null}</div></SectionCard> : <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p>}
+    {nextTransfer.type !== "pendiente" || today.departurePlan ? <SectionCard title="Proximo traslado"><div className="grid gap-2"><p className="text-lg font-black text-ink">{nextTransfer.title}</p><p className="text-sm font-black uppercase tracking-wide text-sea">{nextTransfer.type} - {nextTransfer.status}</p><p className="text-sm font-semibold text-ink/70">Hora: {nextTransfer.time}</p>{today.departurePlan?.transportDepartureTime ? <p className="text-sm font-bold text-ink">Salida del transporte: {today.departurePlan.transportDepartureTime}</p> : null}{today.departurePlan?.recommendedArrival ? <p className="text-sm font-bold text-sea">{today.departurePlan.recommendedArrival}</p> : null}{nextTransfer.reservation?.locator ? <p className="text-sm font-semibold text-ink/70">Reserva: {nextTransfer.reservation.locator}</p> : null}</div></SectionCard> : <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p>}
 
-    {today.departurePlan ? <SectionCard title="Salir"><div className="grid grid-cols-3 gap-2 text-center"><Time label="Ideal" value={today.departurePlan.idealDepartureTime} /><Time label="Comoda" value={today.departurePlan.comfortableDepartureTime} /><Time label="Limite" value={today.departurePlan.latestDepartureTime} /></div><p className="mt-3 text-sm font-semibold text-ink/70">{today.departurePlan.notes}</p></SectionCard> : null}
+    {today.departurePlan ? <SectionCard title="Salir"><div className="grid grid-cols-3 gap-2 text-center"><Time label="Ideal" value={today.departurePlan.idealDepartureTime} /><Time label="Comoda" value={today.departurePlan.comfortableDepartureTime} /><Time label="Limite" value={today.departurePlan.latestDepartureTime} /></div>{today.departurePlan.recommendedArrival ? <p className="mt-3 text-sm font-black text-sea">{today.departurePlan.recommendedArrival}</p> : null}<p className="mt-2 text-sm font-semibold text-ink/70">{today.departurePlan.notes}</p></SectionCard> : null}
 
     <QuickLinks day={day.day} />
     <SectionCard title="Documentos rapidos">{quickDocuments.length ? <div className="grid gap-2">{quickDocuments.map((document) => <QuickDocument document={document} key={document.id} />)}</div> : <p className="text-sm font-semibold text-ink/65">No hay documentos reales asociados a este dia.</p>}</SectionCard>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getPersonalChecklistItems, savePersonalChecklistItems, type ChecklistPriority, type PersonalChecklistItem } from "@/lib/personal-checklists";
+import { getPersonalChecklistItems, PERSONAL_CHECKLISTS_CHANGED, savePersonalChecklistItems, type ChecklistPriority, type PersonalChecklistItem } from "@/lib/personal-checklists";
 import { trip } from "@/lib/trip-data";
 
 export type ChecklistItem = { id: string; label: string; priority: ChecklistPriority };
@@ -23,17 +23,26 @@ export function Checklist({ day, items }: { day: number; items: ChecklistItem[] 
     setTargetDay(day);
   }, [day, doneKey]);
 
+  useEffect(() => {
+    const refreshPersonalItems = () => setPersonalItems(getPersonalChecklistItems(day));
+    window.addEventListener(PERSONAL_CHECKLISTS_CHANGED, refreshPersonalItems);
+    return () => window.removeEventListener(PERSONAL_CHECKLISTS_CHANGED, refreshPersonalItems);
+  }, [day]);
+
   const updateDone = (next: string[]) => { setDone(next); window.localStorage.setItem(doneKey, JSON.stringify(next)); };
   const allItems = [...items, ...personalItems];
   const toggle = (id: string) => updateDone(done.includes(id) ? done.filter((item) => item !== id) : [...done, id]);
   const addPersonalItem = () => {
     const text = label.trim();
-    if (!text) return;
+    if (!text) {
+      setMessage("Escribi un item antes de guardarlo.");
+      return;
+    }
     const next = [...getPersonalChecklistItems(targetDay), { id: `personal-${Date.now()}`, label: text, priority, category: category.trim() || undefined, createdAt: new Date().toISOString() }];
     savePersonalChecklistItems(targetDay, next);
     if (targetDay === day) setPersonalItems(next);
     setLabel(""); setCategory(""); setShowForm(false);
-    setMessage(targetDay === day ? "Item agregado a esta checklist." : `Item agregado al Dia ${targetDay}.`);
+    setMessage(targetDay === day ? "Item agregado" : `Item agregado al Dia ${targetDay}.`);
   };
   const removePersonalItem = (id: string) => {
     const next = personalItems.filter((item) => item.id !== id);

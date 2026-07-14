@@ -64,6 +64,7 @@ export type Reservation = {
   title: string;
   provider: string | null;
   locator: string | null;
+  departure?: string;
   date: string;
   detail: string;
   status: "confirmada" | "pendiente";
@@ -151,6 +152,7 @@ export const reservations: Reservation[] = curatedReservations.map((reservation)
   title: reservation.title,
   provider: reservation.provider,
   locator: reservation.locator ?? null,
+  departure: reservation.departure,
   date: reservationDateLabel(reservation),
   detail: reservationDetail(reservation),
   status: reservation.pending.length === 0 ? "confirmada" : "pendiente",
@@ -303,7 +305,11 @@ function formatDate(date: string) {
 function formatDateTime(value: string | undefined) {
   if (!value) return "Pendiente";
   if (!value.includes("T")) return formatDate(value);
-  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(value));
+
+  // Curated reservations store the local time at the transport or hotel.
+  // Rendering through the browser timezone would shift European departures in Argentina.
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}, ${match[4]}` : "Pendiente";
 }
 
 function mapsUrl(destination: string) {
