@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
+import { getDocumentsForDay, getTripGlobalDocuments, getViewerUrl } from "@/lib/documents";
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
@@ -32,6 +32,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   };
 
   const documentList = useMemo(() => getDocumentsForDay(day.day, approvedDocuments), [approvedDocuments, day.day]);
+  const globalDocumentList = useMemo(() => getTripGlobalDocuments(approvedDocuments), [approvedDocuments]);
   const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments);
   const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
   const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
@@ -201,14 +202,12 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
               {flightStatuses.map((status) => <FlightDocumentStatusCard key={status.flightLabel} status={status} />)}
               {documentList.length > 0 ? (
                 documentList.map((document) => (
-                  <a className="rounded-md border border-black/10 px-3 py-4 font-black text-ink" href={getViewerUrl(document)} key={document.id}>
-                    {document.visibleName}
-                    <span className="ml-2 text-xs font-black text-sea">{document.category}</span>
-                  </a>
+                  <DocumentDayLink document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} />
                 ))
               ) : (
                 <div className="rounded-md border border-black/10 px-3 py-4 font-black text-ink/60">No hay documentos reales asociados a este dia.</div>
               )}
+              {globalDocumentList.length > 0 ? <div className="mt-2 grid gap-2"><p className="text-xs font-black uppercase tracking-wide text-sea">Documentos globales del viaje</p>{globalDocumentList.map((document) => <DocumentDayLink document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} />)}</div> : null}
             </div>
           </SectionCard>
         </div>
@@ -230,6 +229,14 @@ function List({ items }: { items: string[] }) {
       ))}
     </ul>
   );
+}
+
+function DocumentDayLink({ document, onOpen }: { document: IndexedDocument; onOpen: () => void }) {
+  const label = <span className="rounded-md border border-black/10 px-3 py-4 font-black text-ink">{document.visibleName}<span className="ml-2 text-xs font-black text-sea">{document.category}</span></span>;
+  if (document.sensitivity === "highly_sensitive" || document.requiresConfirmation) {
+    return <RiskConfirmationDialog action="Abrir documento protegido" dataShared={document.visibleName} destination="Visor de VAGACIONES" consequence="Se mostrara un documento con datos personales o sensibles." onConfirm={onOpen}>{(open) => <button className="text-left" onClick={open} type="button">{label}</button>}</RiskConfirmationDialog>;
+  }
+  return <button className="text-left" onClick={onOpen} type="button">{label}</button>;
 }
 
 function hasUsableAddress(value: string) {

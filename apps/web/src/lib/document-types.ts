@@ -69,6 +69,8 @@ export type IndexedDocument = {
   id: string;
   visibleName: string;
   category: DocumentCategory;
+  provider?: string | null;
+  reservationCode?: string | null;
   date: string | null;
   associatedDays: readonly number[];
   city: string | null;
@@ -80,6 +82,8 @@ export type IndexedDocument = {
   storageRelativePath?: string;
   mimeType: string;
   availableOffline: boolean;
+  storageAvailable?: boolean;
+  scope?: "day" | "trip_global";
   containsQR: boolean;
   sensitivity: "public" | "internal" | "private" | "highly_sensitive";
   requiresConfirmation: boolean;

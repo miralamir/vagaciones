@@ -16,7 +16,11 @@ export function getDocumentById(id: string) {
 
 export function getDocumentsForDay(day: number, source = getIndexedDocuments()) {
   const reservationIds = new Set(getTripDay(day).reservationIds);
-  return source.filter((document) => document.associatedDays.includes(day) || (document.relatedReservationIds ?? []).some((id) => reservationIds.has(id)));
+  return source.filter((document) => document.scope !== "trip_global" && (document.associatedDays.includes(day) || (document.relatedReservationIds ?? []).some((id) => reservationIds.has(id))));
+}
+
+export function getTripGlobalDocuments(source = getIndexedDocuments()) {
+  return source.filter((document) => document.scope === "trip_global");
 }
 
 export function getQuickDocumentsForDay(day: number) {
@@ -43,8 +47,8 @@ export function getViewerUrl(document: IndexedDocument) {
   return `/trips/europa-2026/documentos/${document.id}`;
 }
 
-export function getOfflineDocuments(today: number) {
-  return getIndexedDocuments().filter((document) => {
+export function getOfflineDocuments(today: number, source = getIndexedDocuments()) {
+  return source.filter((document) => {
     if (document.offlinePolicy === "never") return false;
     if (document.sensitivity === "highly_sensitive") return false;
     if (document.offlinePolicy === "userApproved") return false;
