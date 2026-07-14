@@ -33,6 +33,8 @@ type CuratedReservation = {
   associatedDays: number[];
   documents: string[];
   pending: string[];
+  transferMode?: "contracted_transfer" | "uber" | "taxi" | "train" | "walking" | "pending";
+  meetingPoint?: string | null;
 };
 
 type CuratedDay = {
@@ -74,6 +76,8 @@ export type Reservation = {
   email: string | null;
   pending: string[];
   documentIds: string[];
+  transferMode?: CuratedReservation["transferMode"];
+  meetingPoint?: string | null;
 };
 
 export type Hotel = {
@@ -159,6 +163,8 @@ export const reservations: Reservation[] = curatedReservations.map((reservation)
   email: reservation.email ?? null,
   pending: reservation.pending,
   documentIds: reservation.documents
+  ,transferMode: reservation.transferMode
+  ,meetingPoint: reservation.meetingPoint
 }));
 
 export const tripDays: TripDay[] = curatedDays.map((day, index) => {

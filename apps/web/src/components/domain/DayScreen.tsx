@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
-import { getStatusLabel, getTripDay, trip } from "@/lib/trip-data";
+import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
 import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
@@ -33,6 +33,8 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
 
   const documentList = useMemo(() => getDocumentsForDay(day.day, approvedDocuments), [approvedDocuments, day.day]);
   const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments);
+  const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
+  const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
 
   useEffect(() => {
     void fetch("/api/documents/index", { cache: "no-store" })
@@ -108,6 +110,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
           <SectionCard title="Transporte">
             <div className="grid gap-2">
               <List items={day.transport.length > 0 ? day.transport : ["Sin transporte programado"]} />
+              {contractedTransfers.map((transfer) => <div className="rounded-md border border-black/10 bg-mist p-3" key={transfer.id}><p className="text-xs font-black uppercase text-sea">Traslado contratado</p><p className="mt-1 font-black text-ink">{transfer.title}</p><p className="mt-2 text-sm font-semibold text-ink/70">{transfer.meetingPoint ?? "Punto de encuentro pendiente"}</p><p className="mt-1 text-sm font-semibold text-ink/70">Voucher pendiente de asociar</p><p className="mt-2 text-sm font-bold text-ink">Buscar chofer / cartel / punto de encuentro. Tener voucher a mano.</p></div>)}
               {day.reservationIds.includes("transfer-home-eze") ? <div className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">Casa → Aeropuerto Ezeiza. Configurar dirección de casa para pedir Uber.</div> : null}
               {day.flight ? <FlightDetails flight={day.flight} documents={approvedDocuments} /> : null}
               <RiskConfirmationDialog
@@ -137,7 +140,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
                   >
                     {(open) => <button className="rounded-md bg-sea px-3 py-4 text-center text-sm font-black text-white" onClick={open} type="button">Llevame</button>}
                   </RiskConfirmationDialog>
-                  {hasUsableAddress(day.hotel.address) ? <RiskConfirmationDialog
+                  {hasUsableAddress(day.hotel.address) && !isVeniceDay(day.day) && !hasPlannedHotelTransfer ? <RiskConfirmationDialog
                     action="Pedir Uber al hotel"
                     dataShared={day.hotel.address}
                     destination="Uber"
@@ -185,6 +188,10 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
             <List items={day.pending.length > 0 ? day.pending : ["Sin pendientes cargados."]} />
           </SectionCard>
 
+          {day.reminders.length > day.pending.length ? <SectionCard title="Notas practicas">
+            <List items={day.reminders.slice(0, day.reminders.length - day.pending.length)} />
+          </SectionCard> : null}
+
           <SectionCard title="Consejo">
             <p className="text-ink/75">{day.conciergeTip}</p>
           </SectionCard>
@@ -227,4 +234,8 @@ function List({ items }: { items: string[] }) {
 
 function hasUsableAddress(value: string) {
   return Boolean(value) && !/pendiente/i.test(value);
+}
+
+function isVeniceDay(day: number) {
+  return day === 11 || day === 12;
 }
