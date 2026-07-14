@@ -1,0 +1,62 @@
+[
+  {
+    "id": "day-1-home-eze",
+    "dayNumber": 1,
+    "title": "Casa -> Aeropuerto Ezeiza",
+    "mode": "uber_or_private",
+    "idealDepartureTime": "04:00",
+    "comfortableDepartureTime": "04:30",
+    "latestDepartureTime": "05:00",
+    "notes": "Vuelo nacional 07:35. Direccion de Casa fuera de Git.",
+    "relatedReservationIds": ["flight-eze-igr"],
+    "riskLevel": "medium"
+  },
+  {
+    "id": "day-3-panamby-gru",
+    "dayNumber": 3,
+    "title": "Hotel Panamby -> GRU Terminal 2",
+    "mode": "hotel_shuttle",
+    "idealDepartureTime": "09:45",
+    "comfortableDepartureTime": "10:15",
+    "latestDepartureTime": "10:45",
+    "notes": "Confirmar horario del shuttle con recepcion.",
+    "relatedReservationIds": ["flight-ux58", "panamby-guarulhos"],
+    "riskLevel": "medium"
+  },
+  {
+    "id": "day-9-terminus-gare-lyon",
+    "dayNumber": 9,
+    "title": "Hotel Terminus Lyon -> Gare de Lyon",
+    "mode": "walking_or_taxi",
+    "idealDepartureTime": "09:15",
+    "comfortableDepartureTime": "09:30",
+    "latestDepartureTime": "09:45",
+    "notes": "El tren sale a las 10:22.",
+    "relatedReservationIds": ["tgv-lyria-paris-basel", "terminus-lyon"],
+    "riskLevel": "medium"
+  },
+  {
+    "id": "day-22-hotel-colosseum",
+    "dayNumber": 22,
+    "title": "Hotel Roma -> Coliseo",
+    "mode": "walking_or_taxi",
+    "idealDepartureTime": "13:45",
+    "comfortableDepartureTime": "14:00",
+    "latestDepartureTime": "14:15",
+    "notes": "Entrada 15:00. Llegar 30 minutos antes.",
+    "relatedReservationIds": ["colosseum", "cosmopolita-rome"],
+    "riskLevel": "high"
+  },
+  {
+    "id": "day-25-riu-mad",
+    "dayNumber": 25,
+    "title": "Hotel Riu Plaza Espana -> MAD Terminal 1",
+    "mode": "uber_or_taxi",
+    "idealDepartureTime": "11:30",
+    "comfortableDepartureTime": "12:00",
+    "latestDepartureTime": "12:30",
+    "notes": "Vuelo Air Europa UX83 sale a las 15:25.",
+    "relatedReservationIds": ["flight-ux83", "riu-madrid-return"],
+    "riskLevel": "medium"
+  }
+]
