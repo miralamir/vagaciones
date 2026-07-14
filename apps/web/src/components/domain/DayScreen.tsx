@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getDocumentsForDay, getTripGlobalDocuments, getViewerUrl } from "@/lib/documents";
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
+import { getPlacesForDay } from "@/lib/places";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
@@ -11,6 +12,7 @@ import { SectionCard } from "./Cards";
 import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
 import { FlightDocumentStatusCard } from "./FlightDocumentStatusCard";
 import { Checklist, type ChecklistItem } from "./Checklist";
+import { PlaceCard } from "./PlaceCard";
 import checklists from "../../../../../data/trips/europa-2026/checklists.json";
 
 export function DayScreen({ initialDay }: { initialDay: number }) {
@@ -34,6 +36,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const documentList = useMemo(() => getDocumentsForDay(day.day, approvedDocuments), [approvedDocuments, day.day]);
   const globalDocumentList = useMemo(() => getTripGlobalDocuments(approvedDocuments), [approvedDocuments]);
   const flightStatuses = getFlightDocumentStatuses(day, approvedDocuments);
+  const dayPlaces = useMemo(() => getPlacesForDay(day.day), [day.day]);
   const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
   const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
 
@@ -179,6 +182,10 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
                 {(open) => <button className="rounded-md bg-sea px-4 py-4 text-center font-black text-white" onClick={open} type="button">Llevame</button>}
               </RiskConfirmationDialog>
             </div>
+          </SectionCard>
+
+          <SectionCard title="Lugares utiles del dia">
+            {dayPlaces.length > 0 ? <div className="grid gap-3">{dayPlaces.map((place) => <PlaceCard key={place.id} place={place} />)}</div> : <p className="text-ink/65">Lugares pendientes de cargar.</p>}
           </SectionCard>
 
           <SectionCard title="Checklist">
