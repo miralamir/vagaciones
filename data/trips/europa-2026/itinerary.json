@@ -7,6 +7,15 @@
     "endDate": "2026-08-12",
     "totalDays": 26
   },
+  "preparationDay": {
+    "day": 0,
+    "date": "2026-07-17",
+    "city": "Buenos Aires / Preparacion",
+    "summary": "Preparacion previa del viaje.",
+    "transportReservationIds": [],
+    "notes": ["Revisar documentos fisicos, valijas y cargadores antes de descansar."],
+    "pending": []
+  },
   "days": [
     { "day": 1, "date": "2026-07-18", "city": "Buenos Aires", "route": "Buenos Aires -> Iguazú / Foz do Iguaçu", "summary": "Vuelo a Iguazú y descanso en Recanto Cataratas.", "transportReservationIds": ["transfer-home-eze", "flight-eze-igr", "transfer-igr-recanto"], "accommodationReservationId": "recanto-cataratas", "notes": ["No sobrecargar de actividades; priorizar descanso, pileta y hotel."], "pending": ["Configurar dirección privada de Casa para pedir Uber."] },
     { "day": 2, "date": "2026-07-19", "city": "Iguazú -> São Paulo", "route": "IGU -> CGH -> Guarulhos", "summary": "Vuelo GOL y noche de conexión cerca de GRU.", "transportReservationIds": ["flight-g3-1123", "transfer-cgh-panamby"], "accommodationReservationId": "panamby-guarulhos", "notes": ["Prioridad: dormir cerca de GRU para el vuelo internacional."], "pending": [] },

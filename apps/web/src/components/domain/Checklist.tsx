@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { getPersonalChecklistItems, PERSONAL_CHECKLISTS_CHANGED, savePersonalChecklistItems, type ChecklistPriority, type PersonalChecklistItem } from "@/lib/personal-checklists";
 import { trip } from "@/lib/trip-data";
+import { AccordionSection } from "./AccordionSection";
 
 export type ChecklistItem = { id: string; label: string; priority: ChecklistPriority };
 
@@ -38,6 +39,11 @@ export function Checklist({ day, items }: { day: number; items: ChecklistItem[] 
     }
   };
   const allItems = [...items, ...personalItems];
+  const pendingCurated = items.filter((item) => !done.includes(item.id));
+  const highPriority = pendingCurated.filter((item) => item.priority === "high");
+  const secondaryPriority = pendingCurated.filter((item) => item.priority !== "high");
+  const pendingPersonalItems = personalItems.filter((item) => !done.includes(item.id));
+  const completed = allItems.filter((item) => done.includes(item.id));
   const toggle = (id: string) => updateDone(done.includes(id) ? done.filter((item) => item !== id) : [...done, id]);
   const addPersonalItem = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -62,12 +68,14 @@ export function Checklist({ day, items }: { day: number; items: ChecklistItem[] 
     updateDone(done.filter((item) => item !== id));
   };
 
-  return <div className="grid gap-2">
+  return <div className="grid gap-3">
     <div className="flex flex-wrap items-center gap-3"><button className="text-sm font-black text-sea" onClick={() => updateDone(allItems.map((item) => item.id))} type="button">Marcar todo como hecho</button><button className="text-sm font-black text-ink" onClick={() => setShowForm((value) => !value)} type="button">Agregar item</button></div>
     {showForm ? <form className="grid gap-2 rounded-md border border-black/10 bg-mist p-3" onSubmit={addPersonalItem}><input className="rounded-md border border-black/10 bg-white px-3 py-2 font-semibold text-ink" onChange={(event) => setLabel(event.target.value)} placeholder="Nuevo item" value={label} /><div className="grid grid-cols-2 gap-2"><select className="rounded-md border border-black/10 bg-white px-3 py-2 font-semibold text-ink" onChange={(event) => setTargetDay(Number(event.target.value))} value={targetDay}>{Array.from({ length: trip.totalDays + 1 }, (_, index) => <option key={index} value={index}>Dia {index}</option>)}</select><select className="rounded-md border border-black/10 bg-white px-3 py-2 font-semibold text-ink" onChange={(event) => setPriority(event.target.value as ChecklistPriority)} value={priority}><option value="high">Alta</option><option value="medium">Media</option><option value="low">Baja</option></select></div><input className="rounded-md border border-black/10 bg-white px-3 py-2 font-semibold text-ink" onChange={(event) => setCategory(event.target.value)} placeholder="Categoria opcional" value={category} /><button className="rounded-md bg-sea px-3 py-3 font-black text-white" type="submit">Guardar item</button></form> : null}
     {message ? <p className="text-sm font-semibold text-sea">{message}</p> : null}
-    {items.length ? <div className="grid gap-2"><p className="text-xs font-black uppercase tracking-wide text-sea">Curado</p>{items.map((item) => <ChecklistRow done={done.includes(item.id)} item={item} key={item.id} onToggle={() => toggle(item.id)} />)}</div> : null}
-    {personalItems.length ? <div className="grid gap-2"><p className="text-xs font-black uppercase tracking-wide text-sea">Agregado por mi</p>{personalItems.map((item) => <div className="flex items-center gap-2" key={item.id}><div className="min-w-0 flex-1"><ChecklistRow done={done.includes(item.id)} item={item} onToggle={() => toggle(item.id)} />{item.category ? <p className="mt-1 text-xs font-bold text-ink/60">{item.category}</p> : null}</div><button aria-label={`Borrar ${item.label}`} className="rounded-md px-2 py-2 text-sm font-black text-coral" onClick={() => removePersonalItem(item.id)} type="button">Borrar</button></div>)}</div> : null}
+    {highPriority.length ? <div className="grid gap-2"><p className="text-xs font-black uppercase tracking-wide text-sea">Pendientes importantes</p>{highPriority.map((item) => <ChecklistRow done={false} item={item} key={item.id} onToggle={() => toggle(item.id)} />)}</div> : null}
+    {secondaryPriority.length ? <AccordionSection badge={secondaryPriority.length} defaultOpen={day === 0} title="Media y baja prioridad"><div className="grid gap-2">{secondaryPriority.map((item) => <ChecklistRow done={false} item={item} key={item.id} onToggle={() => toggle(item.id)} />)}</div></AccordionSection> : null}
+    {pendingPersonalItems.length ? <AccordionSection badge={pendingPersonalItems.length} defaultOpen title="Agregado por mi"><div className="grid gap-2">{pendingPersonalItems.map((item) => <div className="flex items-center gap-2" key={item.id}><div className="min-w-0 flex-1"><ChecklistRow done={false} item={item} onToggle={() => toggle(item.id)} />{item.category ? <p className="mt-1 text-xs font-bold text-ink/60">{item.category}</p> : null}</div><button aria-label={`Borrar ${item.label}`} className="rounded-md px-2 py-2 text-sm font-black text-coral" onClick={() => removePersonalItem(item.id)} type="button">Borrar</button></div>)}</div></AccordionSection> : null}
+    {completed.length ? <AccordionSection badge={completed.length} title="Hechos"><div className="grid gap-2">{completed.map((item) => <div className="flex items-center gap-2" key={item.id}><div className="min-w-0 flex-1"><ChecklistRow done item={item} onToggle={() => toggle(item.id)} /></div>{personalItems.some((personalItem) => personalItem.id === item.id) ? <button aria-label={`Borrar ${item.label}`} className="rounded-md px-2 py-2 text-sm font-black text-coral" onClick={() => removePersonalItem(item.id)} type="button">Borrar</button> : null}</div>)}</div></AccordionSection> : null}
     {!allItems.length ? <p className="text-ink/65">Sin checklist especifica todavia.</p> : null}
   </div>;
 }

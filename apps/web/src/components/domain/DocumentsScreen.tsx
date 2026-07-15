@@ -8,7 +8,7 @@ import { getSavedDocumentIds, saveDocumentOffline } from "@/lib/document-offline
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
 import type { DocumentCategory, DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { AppShell } from "./AppShell";
-import { SectionCard } from "./Cards";
+import { AccordionSection } from "./AccordionSection";
 import { FlightDocumentStatusCard } from "./FlightDocumentStatusCard";
 import { RiskConfirmationDialog } from "./RiskConfirmationDialog";
 
@@ -52,6 +52,8 @@ export function DocumentsScreen() {
 
   const associated = filtered.filter((document) => document.associatedDays.length > 0 || (document.relatedReservationIds?.length ?? 0) > 0);
   const unassociated = filtered.filter((document) => !document.associatedDays.length && !(document.relatedReservationIds?.length ?? 0));
+  const futureExpected = filtered.filter((document) => document.flightDocumentKind === "boarding_pass" || document.flightDocumentKind === "qr");
+  const sensitiveDocuments = filtered.filter((document) => document.sensitivity === "highly_sensitive" || document.requiresConfirmation);
   const days = [...new Set(associated.flatMap((document) => document.associatedDays))].sort((a, b) => a - b);
 
   const save = async (document: IndexedDocument) => {
@@ -85,23 +87,25 @@ export function DocumentsScreen() {
           {message ? <p className="mt-3 rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">{message}</p> : null}
         </div>
 
-        {flightStatuses.length > 0 ? <SectionCard title="Estado de vuelos">{flightStatuses.map((status) => <FlightDocumentStatusCard key={status.flightLabel} status={status} />)}</SectionCard> : null}
+        {flightStatuses.length > 0 ? <AccordionSection badge={flightStatuses.length} defaultOpen title="Estado de vuelos">{flightStatuses.map((status) => <FlightDocumentStatusCard key={status.flightLabel} status={status} />)}</AccordionSection> : null}
+        {futureExpected.length ? <AccordionSection badge={futureExpected.length} title="Futuros esperados"><div className="grid gap-3">{futureExpected.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</div></AccordionSection> : null}
+        {sensitiveDocuments.length ? <AccordionSection badge={sensitiveDocuments.length} title="Sensibles o requieren aprobacion"><div className="grid gap-3">{sensitiveDocuments.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</div></AccordionSection> : null}
 
-        {getDocumentsForDay(context.activeDay.day, filtered).length > 0 ? <SectionCard title={`Hoy - Dia ${context.activeDay.day}`}>
+        {getDocumentsForDay(context.activeDay.day, filtered).length > 0 ? <AccordionSection badge={getDocumentsForDay(context.activeDay.day, filtered).length} defaultOpen title={`Hoy - Dia ${context.activeDay.day}`}>
           <div className="grid gap-3">{getDocumentsForDay(context.activeDay.day, filtered).map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</div>
-        </SectionCard> : null}
+        </AccordionSection> : null}
 
         {view === "day" ? days.map((day) => {
           const items = associated.filter((document) => document.associatedDays.includes(day));
-          return items.length > 0 ? <SectionCard key={day} title={`Dia ${day}`}>{items.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</SectionCard> : null;
+          return items.length > 0 ? <AccordionSection badge={items.length} key={day} title={`Dia ${day}`}>{items.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</AccordionSection> : null;
         }) : categories.map((category) => {
           const items = associated.filter((document) => document.category === category.id);
-          return items.length > 0 ? <SectionCard key={category.id} title={category.label}>{items.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</SectionCard> : null;
+          return items.length > 0 ? <AccordionSection badge={items.length} key={category.id} title={category.label}>{items.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</AccordionSection> : null;
         })}
 
-        <SectionCard title="Documentos sin asociar">
+        <AccordionSection badge={unassociated.length || undefined} defaultOpen={unassociated.length > 0} title="Documentos sin asociar">
           {unassociated.length > 0 ? <div className="grid gap-3">{unassociated.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</div> : <p className="rounded-md bg-mist px-3 py-3 font-bold text-ink/65">No hay documentos sin asociar para este filtro.</p>}
-        </SectionCard>
+        </AccordionSection>
       </section>
     </AppShell>
   );

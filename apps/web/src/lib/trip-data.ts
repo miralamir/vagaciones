@@ -142,6 +142,7 @@ export type TripDay = {
 
 const curatedReservations = reservationsData as CuratedReservation[];
 const curatedDays = itineraryData.days as CuratedDay[];
+const curatedPreparationDay = itineraryData.preparationDay as CuratedDay;
 const reservationById = new Map(curatedReservations.map((reservation) => [reservation.id, reservation]));
 
 export const trip = itineraryData.trip;
@@ -209,7 +210,38 @@ export const tripDays: TripDay[] = curatedDays.map((day, index) => {
   };
 });
 
+export const preparationDay: TripDay = {
+  day: curatedPreparationDay.day,
+  dateISO: curatedPreparationDay.date,
+  date: formatDate(curatedPreparationDay.date),
+  city: curatedPreparationDay.city,
+  nextDestination: "Inicio del viaje",
+  nextEvent: curatedPreparationDay.summary,
+  countdown: "Preparacion previa",
+  status: "control",
+  transfer: {
+    title: "Sin traslados urgentes ahora.",
+    destination: "Buenos Aires",
+    idealLeaveTime: "Pendiente",
+    comfortableLeaveTime: "Pendiente",
+    limitLeaveTime: "Pendiente",
+    estimatedTravelTime: "Pendiente",
+    mapsUrl: mapsUrl("Buenos Aires"),
+    uberUrl: ""
+  },
+  quickDocuments: { qr: "", reservation: "", passports: "" },
+  transport: [],
+  activities: [],
+  checklist: [],
+  reminders: curatedPreparationDay.notes,
+  conciergeTip: "Deja documentos, valijas y cargadores listos para una salida tranquila.",
+  documents: [],
+  pending: curatedPreparationDay.pending,
+  reservationIds: []
+};
+
 export function getTripDay(day: number) {
+  if (day === 0) return preparationDay;
   return tripDays[Math.min(Math.max(day, 1), trip.totalDays) - 1];
 }
 

@@ -15,12 +15,13 @@ import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "
 import { FlightDocumentStatusCard } from "./FlightDocumentStatusCard";
 import { Checklist, type ChecklistItem } from "./Checklist";
 import { PlaceCard } from "./PlaceCard";
+import { AccordionSection } from "./AccordionSection";
 import checklists from "../../../../../data/trips/europa-2026/checklists.json";
 
 export function DayScreen({ initialDay }: { initialDay: number }) {
   const router = useRouter();
   const isPreparation = initialDay === 0;
-  const day = getTripDay(isPreparation ? 1 : initialDay);
+  const day = getTripDay(initialDay);
   const checklistItems = (checklists.byDay[String(initialDay) as keyof typeof checklists.byDay] ?? []) as ChecklistItem[];
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -28,9 +29,9 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const [personalPlaces, setPersonalPlaces] = useState<PersonalPlace[]>([]);
 
   const previousDay = Math.max(day.day - 1, 1);
-  const nextDay = Math.min(day.day + 1, trip.totalDays);
-  const canGoPrevious = day.day > 1;
-  const canGoNext = day.day < trip.totalDays;
+  const nextDay = isPreparation ? 1 : Math.min(day.day + 1, trip.totalDays);
+  const canGoPrevious = !isPreparation && day.day > 1;
+  const canGoNext = isPreparation || day.day < trip.totalDays;
 
   const navigateToDay = (targetDay: number) => {
     router.push(`/trips/europa-2026/days/${targetDay}`);
@@ -42,6 +43,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const dayPlaces = useMemo(() => [...getPlacesForDay(day.day), ...personalPlaces.filter((place) => place.relatedDays.includes(day.day))], [day.day, personalPlaces]);
   const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
   const trainReservations = reservations.filter((reservation) => reservation.type === "tren" && day.reservationIds.includes(reservation.id));
+  const relatedReservations = reservations.filter((reservation) => day.reservationIds.includes(reservation.id));
   const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
   const timeRecommendation = getTimeRecommendation(day);
 
@@ -85,8 +87,8 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
             </button>
             <div className="text-center">
               <p className="text-xs font-black uppercase tracking-wide text-sea">Día {isPreparation ? 0 : day.day} de {trip.totalDays}</p>
-              <h2 className="text-xl font-black leading-tight text-ink">{isPreparation ? "Preparación" : day.date}</h2>
-              <p className="text-sm font-semibold text-ink/65">{isPreparation ? "Buenos Aires" : day.city}</p>
+              <h2 className="text-xl font-black leading-tight text-ink">{isPreparation ? `Preparacion previa - ${day.date}` : day.date}</h2>
+              <p className="text-sm font-semibold text-ink/65">{day.city}</p>
             </div>
             <button
               className="rounded-md border border-black/10 px-3 py-4 text-sm font-black text-ink disabled:opacity-35"
@@ -106,7 +108,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
           <SectionCard title="Estado del dia">
             <div className="grid gap-3">
               <p className="rounded-md bg-mist px-3 py-3 text-lg font-black text-ink">{getStatusLabel(day.status)}</p>
-              <RiskConfirmationDialog
+              {isPreparation ? <p className="text-sm font-semibold text-ink/70">Preparacion previa: deja lo esencial resuelto antes de descansar.</p> : <RiskConfirmationDialog
                 action="Abrir ubicacion"
                 dataShared={day.transfer.destination}
                 destination="Google Maps"
@@ -114,18 +116,18 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
                 onConfirm={() => openExternalUrl(day.transfer.mapsUrl)}
               >
                 {(open) => <button className="rounded-md bg-sea px-4 py-4 text-center font-black text-white" onClick={open} type="button">Llevame</button>}
-              </RiskConfirmationDialog>
+              </RiskConfirmationDialog>}
             </div>
           </SectionCard>
 
-          <SectionCard title="Transporte">
+          <AccordionSection defaultOpen={isPreparation || isVeniceDay(day.day) || day.transport.length > 0 || contractedTransfers.length > 0} title="Transporte">
             <div className="grid gap-2">
-              <List items={day.transport.length > 0 ? day.transport : ["Sin transporte programado"]} />
+              {isPreparation ? <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p> : isVeniceDay(day.day) ? <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Movilidad recomendada: caminar.</p> : <List items={day.transport.length > 0 ? day.transport : ["Sin transporte programado"]} />}
               {contractedTransfers.map((transfer) => <div className="rounded-md border border-black/10 bg-mist p-3" key={transfer.id}><p className="text-xs font-black uppercase text-sea">Traslado contratado</p><p className="mt-1 font-black text-ink">{transfer.title}</p><p className="mt-2 text-sm font-semibold text-ink/70">{transfer.meetingPoint ?? "Punto de encuentro pendiente"}</p><p className="mt-1 text-sm font-semibold text-ink/70">Voucher pendiente de asociar</p><p className="mt-2 text-sm font-bold text-ink">Buscar chofer / cartel / punto de encuentro. Tener voucher a mano.</p></div>)}
               {day.reservationIds.includes("transfer-home-eze") ? <div className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">Casa → Aeropuerto Ezeiza. Configurar dirección de casa para pedir Uber.</div> : null}
               {day.flight ? <FlightDetails flight={day.flight} documents={approvedDocuments} /> : null}
               {trainReservations.map((train) => <TrainDetails key={train.id} train={train} />)}
-              <RiskConfirmationDialog
+              {!isPreparation ? <RiskConfirmationDialog
                 action="Abrir traslado"
                 dataShared={day.transfer.destination}
                 destination="Google Maps"
@@ -133,9 +135,9 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
                 onConfirm={() => openExternalUrl(day.transfer.mapsUrl)}
               >
                 {(open) => <button className="rounded-md bg-ink px-4 py-4 text-center font-black text-white" onClick={open} type="button">Llevame</button>}
-              </RiskConfirmationDialog>
+              </RiskConfirmationDialog> : null}
             </div>
-          </SectionCard>
+          </AccordionSection>
 
           {timeRecommendation ? <SectionCard title="Recomendacion de tiempo">
             <div className="grid gap-2">
@@ -146,7 +148,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
             </div>
           </SectionCard> : null}
 
-          <SectionCard title="Hotel">
+          {!isPreparation ? <AccordionSection title="Alojamiento">
             {day.hotel ? (
               <div>
                 <p className="font-bold text-ink">{day.hotel.name}</p>
@@ -184,12 +186,12 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
             ) : (
               <p className="text-ink/65">Sin hotel asignado para este dia.</p>
             )}
-          </SectionCard>
+          </AccordionSection> : null}
 
-          <SectionCard title="Actividades">
+          <AccordionSection title="Actividades">
             <div className="grid gap-2">
-              <List items={day.activities} />
-              <RiskConfirmationDialog
+              <List items={day.activities.length > 0 ? day.activities : ["Preparacion previa: documentos fisicos, valija y cargadores."]} />
+              {!isPreparation ? <RiskConfirmationDialog
                 action="Abrir actividad"
                 dataShared={day.nextEvent}
                 destination="Google Maps"
@@ -197,31 +199,31 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
                 onConfirm={() => openExternalUrl(day.transfer.mapsUrl)}
               >
                 {(open) => <button className="rounded-md bg-sea px-4 py-4 text-center font-black text-white" onClick={open} type="button">Llevame</button>}
-              </RiskConfirmationDialog>
+              </RiskConfirmationDialog> : null}
             </div>
-          </SectionCard>
+          </AccordionSection>
 
-          <SectionCard title="Lugares utiles del dia">
+          <AccordionSection badge={dayPlaces.length || undefined} title="Lugares utiles">
             {dayPlaces.length > 0 ? <div className="grid gap-3">{dayPlaces.map((place) => <PlaceCard key={place.id} place={place} />)}</div> : <p className="text-ink/65">Lugares pendientes de cargar.</p>}
-          </SectionCard>
+          </AccordionSection>
 
-          <div id="checklist"><SectionCard title="Checklist">
+          <div id="checklist"><AccordionSection badge={checklistItems.length || undefined} defaultOpen={checklistItems.some((item) => item.priority === "high")} title="Checklist">
             <Checklist day={initialDay} items={checklistItems.length ? checklistItems : day.checklist.map((label, index) => ({ id: `day-${day.day}-${index}`, label, priority: "medium" }))} />
-          </SectionCard></div>
+          </AccordionSection></div>
 
-          <SectionCard title="Pendientes">
+          <AccordionSection badge={day.pending.length || undefined} defaultOpen={day.pending.length > 0} title="Notas y pendientes">
             <List items={day.pending.length > 0 ? day.pending : ["Sin pendientes cargados."]} />
-          </SectionCard>
+          </AccordionSection>
 
-          {day.reminders.length > day.pending.length ? <SectionCard title="Notas practicas">
+          {day.reminders.length > day.pending.length ? <AccordionSection title="Notas practicas">
             <List items={day.reminders.slice(0, day.reminders.length - day.pending.length)} />
-          </SectionCard> : null}
+          </AccordionSection> : null}
 
-          <SectionCard title="Consejo">
+          <AccordionSection title="Consejo">
             <p className="text-ink/75">{day.conciergeTip}</p>
-          </SectionCard>
+          </AccordionSection>
 
-          <SectionCard title="Documentos del dia">
+          <AccordionSection badge={documentList.length + flightStatuses.length || undefined} defaultOpen={flightStatuses.length > 0 || documentList.length > 0} title="Documentos del dia">
             <div className="grid gap-2">
               {flightStatuses.map((status) => <FlightDocumentStatusCard key={status.flightLabel} status={status} />)}
               {documentList.length > 0 ? (
@@ -233,7 +235,9 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
               )}
               {globalDocumentList.length > 0 ? <div className="mt-2 grid gap-2"><p className="text-xs font-black uppercase tracking-wide text-sea">Documentos globales del viaje</p>{globalDocumentList.map((document) => <DocumentDayLink document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} />)}</div> : null}
             </div>
-          </SectionCard>
+          </AccordionSection>
+
+          {relatedReservations.length ? <AccordionSection badge={relatedReservations.length} title="Reservas relacionadas"><ul className="grid gap-2">{relatedReservations.map((reservation) => <li className="rounded-md bg-mist px-3 py-3" key={reservation.id}><p className="font-black text-ink">{reservation.title}</p><p className="text-sm font-semibold text-ink/65">{reservation.locator ? `Localizador: ${reservation.locator}` : reservation.date}</p></li>)}</ul></AccordionSection> : null}
         </div>
       </section>
     </AppShell>

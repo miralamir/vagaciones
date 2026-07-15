@@ -53,7 +53,7 @@ export function getTripToday(now = new Date(), manualDay?: number): TripToday {
   const start = dateOnly(trip.startDate);
   const end = dateOnly(trip.endDate);
   const today = dateOnly(todayDate);
-  const validOverride = manualDay !== undefined && Number.isInteger(manualDay) && manualDay >= 1 && manualDay <= trip.totalDays;
+  const validOverride = manualDay !== undefined && Number.isInteger(manualDay) && manualDay >= 0 && manualDay <= trip.totalDays;
   const tripPhase: TripPhase = validOverride ? "during_trip" : today < start ? "before_trip" : today > end ? "after_trip" : "during_trip";
   const activeDayNumber = validOverride ? manualDay : tripPhase === "before_trip" ? 1 : tripPhase === "after_trip" ? trip.totalDays : Math.round((today.getTime() - start.getTime()) / 86400000) + 1;
   const activeDay = getTripDay(activeDayNumber);
