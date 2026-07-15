@@ -10,9 +10,11 @@ type CuratedReservation = {
   title: string;
   locator?: string | null;
   additionalLocators?: string[];
+  status?: "confirmed" | "pending";
   flightNumber?: string;
   departure?: string;
   arrival?: string;
+  travelClass?: string;
   startDate?: string;
   checkIn?: string;
   checkOut?: string;
@@ -64,7 +66,12 @@ export type Reservation = {
   title: string;
   provider: string | null;
   locator: string | null;
+  additionalLocators: string[];
   departure?: string;
+  arrival?: string;
+  origin?: string;
+  destination?: string;
+  travelClass?: string;
   date: string;
   detail: string;
   status: "confirmada" | "pendiente";
@@ -153,10 +160,15 @@ export const reservations: Reservation[] = curatedReservations.map((reservation)
   title: reservation.title,
   provider: reservation.provider,
   locator: reservation.locator ?? null,
+  additionalLocators: reservation.additionalLocators ?? [],
   departure: reservation.departure,
+  arrival: reservation.arrival,
+  origin: reservation.origin,
+  destination: reservation.destination,
+  travelClass: reservation.travelClass,
   date: reservationDateLabel(reservation),
   detail: reservationDetail(reservation),
-  status: reservation.pending.length === 0 ? "confirmada" : "pendiente",
+  status: reservation.status === "pending" ? "pendiente" : "confirmada",
   associatedDays: reservation.associatedDays,
   passengers: reservation.passengers,
   seats: reservation.seats ?? [],
@@ -326,7 +338,7 @@ function reservationDateLabel(reservation: CuratedReservation) {
 
 function reservationDetail(reservation: CuratedReservation) {
   const route = [reservation.origin, reservation.destination].filter(isPresent).join(" -> ");
-  const details = [reservation.provider, reservation.flightNumber, route, reservation.cabin ? `Cabina ${reservation.cabin}` : null].filter(isPresent);
+  const details = [reservation.provider, reservation.flightNumber, route, reservation.travelClass ? `Clase ${reservation.travelClass}` : null, reservation.cabin ? `Cabina ${reservation.cabin}` : null].filter(isPresent);
   return details.join(" · ") || "Datos pendientes de cargar.";
 }
 

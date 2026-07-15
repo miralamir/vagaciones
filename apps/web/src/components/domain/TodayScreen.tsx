@@ -10,6 +10,7 @@ import { canRequestUber, getPlaceMapsUrl, getPlacesForDay, type Place } from "@/
 import { getPersonalChecklistItems, PERSONAL_CHECKLISTS_CHANGED, type PersonalChecklistItem } from "@/lib/personal-checklists";
 import { getNextTransfer, getTripToday } from "@/lib/trip-today";
 import { getStatusLabel, reservations } from "@/lib/trip-data";
+import { getRailPlansForDay, railPlanLabel } from "@/lib/rail-plans";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
 import { AccordionSection } from "./AccordionSection";
@@ -31,6 +32,7 @@ export function TodayScreen() {
   const urgentChecklist = useMemo(() => getUrgentChecklist(day.day, completedChecklist, personalChecklist), [completedChecklist, day.day, personalChecklist]);
   const usefulPlaces = useMemo(() => getPlacesForDay(day.day).sort((a, b) => placeRank(a, day.reservationIds) - placeRank(b, day.reservationIds)).slice(0, 4), [day.day, day.reservationIds]);
   const relatedReservations = useMemo(() => reservations.filter((reservation) => day.reservationIds.includes(reservation.id)), [day.reservationIds]);
+  const railPlans = useMemo(() => getRailPlansForDay(day.day), [day.day]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60000);
@@ -74,6 +76,7 @@ export function TodayScreen() {
     <AccordionSection badge={urgentChecklist.length || undefined} defaultOpen={urgentChecklist.some((item) => item.priority === "high")} title="Checklist urgente">{urgentChecklist.length ? <ul className="grid gap-2">{urgentChecklist.map((item) => <li className="flex items-center justify-between gap-3 rounded-md bg-mist px-3 py-3" key={item.id}><span className="font-semibold text-ink">{item.label}</span><span className="text-xs font-black uppercase text-sea">{priorityLabel(item.priority)}</span></li>)}</ul> : <p className="text-sm font-semibold text-ink/65">No hay checklist urgente cargada para este dia.</p>}</AccordionSection>
     <AccordionSection badge={usefulPlaces.length || undefined} title="Lugares utiles">{usefulPlaces.length ? <div className="grid gap-2">{usefulPlaces.map((place) => <QuickPlace place={place} key={place.id} />)}</div> : <p className="text-sm font-semibold text-ink/65">Lugares pendientes de cargar.</p>}</AccordionSection>
     {relatedReservations.length ? <AccordionSection badge={relatedReservations.length} title="Proximas reservas"><ul className="grid gap-2">{relatedReservations.map((reservation) => <li className="rounded-md bg-mist px-3 py-3" key={reservation.id}><p className="font-black text-ink">{reservation.title}</p><p className="text-sm font-semibold text-ink/65">{reservation.date}</p></li>)}</ul></AccordionSection> : null}
+    {railPlans.length ? <AccordionSection badge={railPlans.length} title="Conexion ferroviaria"><div className="grid gap-2">{railPlans.map((plan) => <div className="rounded-md bg-mist px-3 py-3" key={plan.id}><p className="text-xs font-black uppercase text-sea">{railPlanLabel(plan.kind)}</p><p className="mt-1 font-black text-ink">{plan.title}</p><p className="mt-1 text-sm font-semibold text-ink/70">{plan.summary}</p></div>)}</div></AccordionSection> : null}
     {day.pending.length ? <AccordionSection badge={day.pending.length} defaultOpen title="Pendientes"> <ul className="grid gap-2">{day.pending.map((item) => <li className="rounded-md bg-mist px-3 py-3 font-semibold text-ink" key={item}>{item}</li>)}</ul></AccordionSection> : null}
   </section></AppShell>;
 }

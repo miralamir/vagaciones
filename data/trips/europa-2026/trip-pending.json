@@ -1,0 +1,26 @@
+{
+  "critical": [
+    "MSC Divina: saldo de 3317,18 USD vencido el 16/06/2026; verificar estado.",
+    "Hotel Cosmopolita Roma: faltan localizador, direccion, contacto, tarifa y documento.",
+    "Intercity Salvador: faltan datos completos y documento.",
+    "Vouchers y puntos de encuentro de traslados contratados pendientes."
+  ],
+  "important": [
+    "OUIGO Madrid -> Barcelona: horario y localizador pendientes.",
+    "Barcelona -> Paris: horario y localizador pendientes.",
+    "Varenna Sweet Home: faltan detalles completos."
+  ],
+  "decision": [
+    "Sagrada Familia: pendiente decidir o comprar entrada.",
+    "Torre Eiffel: pendiente decidir o comprar entrada.",
+    "Actividades opcionales en Foz: pendiente decidir.",
+    "Perfumes y diseno para Nadia: pendiente seleccionar lugares.",
+    "LEGO y jugueterias para Bruno: pendiente seleccionar lugares."
+  ],
+  "future": [
+    "Check-in de vuelos.",
+    "Boarding pass futuros.",
+    "QR futuros.",
+    "Documentos de embarque futuros."
+  ]
+}

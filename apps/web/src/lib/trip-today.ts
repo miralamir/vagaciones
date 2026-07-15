@@ -97,8 +97,8 @@ export function getTimeRecommendation(day: TripDay): TimeRecommendation | undefi
     pending: false
   };
 
-  if (day.day === 11) return { note: "Frecciarossa 9731 confirmado. Horario pendiente: falta calcular salida recomendada.", pending: true };
-  if (day.day === 13) return { note: "Frecciarossa 9425 confirmado. Horario pendiente: falta calcular salida recomendada.", pending: true };
+  if (day.day === 11) return { transportDepartureTime: "13:45", recommendedArrival: "Llegar a Milano Centrale 13:15 aprox.", note: "Frecciarossa 9731 confirmado. Las puertas cierran 1 minuto antes.", pending: false };
+  if (day.day === 13) return { transportDepartureTime: "14:26", recommendedArrival: "Llegar a Venezia S. Lucia 13:56 aprox.", note: "Frecciarossa 9425 confirmado. Roma -> Civitavecchia sigue pendiente.", pending: false };
 
   const reservation = day.reservationIds.map((id) => reservations.find((item) => item.id === id)).find((item) => item?.type === "tren");
   if (!reservation) return undefined;

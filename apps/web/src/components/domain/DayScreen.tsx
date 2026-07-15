@@ -9,6 +9,7 @@ import { getPersonalPlaces, type PersonalPlace } from "@/lib/personal-places";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
 import { getTimeRecommendation } from "@/lib/trip-today";
+import { getRailPlansForDay, railPlanLabel, type RailPlan } from "@/lib/rail-plans";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
 import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
@@ -43,6 +44,7 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
   const dayPlaces = useMemo(() => [...getPlacesForDay(day.day), ...personalPlaces.filter((place) => place.relatedDays.includes(day.day))], [day.day, personalPlaces]);
   const contractedTransfers = reservations.filter((reservation) => reservation.transferMode === "contracted_transfer" && day.reservationIds.includes(reservation.id));
   const trainReservations = reservations.filter((reservation) => reservation.type === "tren" && day.reservationIds.includes(reservation.id));
+  const railPlans = getRailPlansForDay(day.day);
   const relatedReservations = reservations.filter((reservation) => day.reservationIds.includes(reservation.id));
   const hasPlannedHotelTransfer = contractedTransfers.length > 0 || day.day === 3;
   const timeRecommendation = getTimeRecommendation(day);
@@ -122,11 +124,12 @@ export function DayScreen({ initialDay }: { initialDay: number }) {
 
           <AccordionSection defaultOpen={isPreparation || isVeniceDay(day.day) || day.transport.length > 0 || contractedTransfers.length > 0} title="Transporte">
             <div className="grid gap-2">
-              {isPreparation ? <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p> : isVeniceDay(day.day) ? <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Movilidad recomendada: caminar.</p> : <List items={day.transport.length > 0 ? day.transport : ["Sin transporte programado"]} />}
+              {isPreparation ? <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p> : isVeniceDay(day.day) && day.transport.length === 0 ? <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Movilidad recomendada: caminar.</p> : <List items={day.transport.length > 0 ? day.transport : ["Sin transporte programado"]} />}
               {contractedTransfers.map((transfer) => <div className="rounded-md border border-black/10 bg-mist p-3" key={transfer.id}><p className="text-xs font-black uppercase text-sea">Traslado contratado</p><p className="mt-1 font-black text-ink">{transfer.title}</p><p className="mt-2 text-sm font-semibold text-ink/70">{transfer.meetingPoint ?? "Punto de encuentro pendiente"}</p><p className="mt-1 text-sm font-semibold text-ink/70">Voucher pendiente de asociar</p><p className="mt-2 text-sm font-bold text-ink">Buscar chofer / cartel / punto de encuentro. Tener voucher a mano.</p></div>)}
               {day.reservationIds.includes("transfer-home-eze") ? <div className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">Casa → Aeropuerto Ezeiza. Configurar dirección de casa para pedir Uber.</div> : null}
               {day.flight ? <FlightDetails flight={day.flight} documents={approvedDocuments} /> : null}
               {trainReservations.map((train) => <TrainDetails key={train.id} train={train} />)}
+              {railPlans.map((plan) => <RailPlanDetails key={plan.id} plan={plan} />)}
               {!isPreparation ? <RiskConfirmationDialog
                 action="Abrir traslado"
                 dataShared={day.transfer.destination}
@@ -250,7 +253,16 @@ function FlightDetails({ flight, documents }: { flight: NonNullable<ReturnType<t
 }
 
 function TrainDetails({ train }: { train: (typeof reservations)[number] }) {
-  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Tren</p><p className="font-black text-ink">{train.provider ?? "Operador pendiente"}</p><p className="mt-1 text-sm font-bold text-ink/70">{train.title}</p><p className="mt-1 text-sm font-semibold text-ink/70">{train.date === "Fecha pendiente" ? "Horario pendiente" : `Salida: ${train.date}`}</p>{train.locator ? <p className="mt-2 text-sm font-bold text-ink">Referencia: {train.locator}</p> : null}{train.seats.length > 0 ? <p className="mt-1 text-sm font-bold text-ink">{train.seats.join(" · ")}</p> : null}{train.pending.length > 0 ? <p className="mt-2 text-sm font-semibold text-coral">{train.pending.join(" ")}</p> : null}</div>;
+  return <div className="rounded-md bg-mist p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">Tren</p><p className="font-black text-ink">{train.provider ?? "Operador pendiente"}</p><p className="mt-1 text-sm font-bold text-ink/70">{train.title}</p>{train.origin && train.destination ? <p className="mt-1 text-sm font-bold text-ink/70">{train.origin} -&gt; {train.destination}</p> : null}{train.departure ? <p className="mt-1 text-sm font-semibold text-ink/70">Salida: {formatTransportTime(train.departure)}</p> : <p className="mt-1 text-sm font-semibold text-ink/70">Horario pendiente</p>}{train.arrival ? <p className="mt-1 text-sm font-semibold text-ink/70">Llegada: {formatTransportTime(train.arrival)}</p> : null}{train.travelClass ? <p className="mt-1 text-sm font-bold text-ink">{train.travelClass}</p> : null}{train.locator ? <p className="mt-2 text-sm font-bold text-ink">PNR: {train.locator}</p> : null}{train.seats.length > 0 ? <p className="mt-1 text-sm font-bold text-ink">{train.seats.join(" · ")}</p> : null}{train.pending.length > 0 ? <p className="mt-2 text-sm font-semibold text-coral">Pendiente: {train.pending.join(" ")}</p> : null}</div>;
+}
+
+function RailPlanDetails({ plan }: { plan: RailPlan }) {
+  return <div className="rounded-md border border-black/10 bg-white p-3"><p className="text-[10px] font-black uppercase tracking-wide text-sea">{railPlanLabel(plan.kind)}</p><p className="mt-1 font-black text-ink">{plan.title}</p><p className="mt-1 text-sm font-semibold text-ink/70">{plan.summary}</p>{plan.options?.map((option) => <div className={option.label === "No recomendado" ? "mt-2 rounded-md bg-red-50 p-2 text-red-800" : "mt-2 rounded-md bg-mist p-2 text-ink"} key={option.label}><p className="text-xs font-black uppercase">Horario {option.label}</p>{option.segments.map((segment) => <p className="mt-1 text-sm font-semibold" key={segment}>{segment}</p>)}<p className="mt-1 text-sm font-bold">Margen: {option.margin}</p></div>)}{plan.notes?.map((note) => <p className="mt-2 text-sm font-semibold text-ink/70" key={note}>{note}</p>)}</div>;
+}
+
+function formatTransportTime(value: string) {
+  const match = value.match(/T(\d{2}:\d{2})/);
+  return match?.[1] ?? value;
 }
 
 function List({ items }: { items: string[] }) {
