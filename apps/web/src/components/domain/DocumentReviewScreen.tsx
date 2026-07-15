@@ -10,6 +10,7 @@ const categories: DocumentCategory[] = ["vuelos", "hoteles", "trenes", "crucero"
 
 export function DocumentReviewScreen() {
   const [review, setReview] = useState<DocumentReviewIndex>(emptyReview());
+  const [loadError, setLoadError] = useState<"unauthorized" | "unavailable" | null>(null);
   const [confidence, setConfidence] = useState<"all" | DetectionConfidence>("all");
   const [category, setCategory] = useState<"all" | DocumentCategory>("all");
   const [onlyUnlinked, setOnlyUnlinked] = useState(false);
@@ -19,9 +20,16 @@ export function DocumentReviewScreen() {
 
   useEffect(() => {
     void fetch("/api/documents/review", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data: DocumentReviewIndex) => setReview(data))
-      .catch(() => undefined);
+      .then(async (response) => {
+        const data = await response.json().catch(() => null) as unknown;
+        if (!response.ok) {
+          setLoadError(response.status === 401 || response.status === 403 ? "unauthorized" : "unavailable");
+          return;
+        }
+        setReview(normalizeReview(data));
+        setLoadError(null);
+      })
+      .catch(() => setLoadError("unavailable"));
   }, []);
 
   const documents = useMemo(() => review.documents.filter((document) => {
@@ -89,6 +97,9 @@ export function DocumentReviewScreen() {
       <p className="mt-1 text-sm font-semibold text-ink/60">{review.privateIncomingDirectory}</p>
     </div>
 
+    {loadError === "unauthorized" ? <SectionCard title="Acceso requerido"><p className="text-sm font-semibold text-ink/70">Inicia sesion para revisar documentos privados.</p><a className="mt-3 inline-flex rounded-md bg-sea px-3 py-2 font-black text-white" href="/trips/europa-2026/documentos/acceso">Ir al acceso</a></SectionCard> : null}
+    {loadError === "unavailable" ? <SectionCard title="Revision no disponible"><p className="text-sm font-semibold text-ink/70">No se pudo cargar la revision ahora. Volve a intentar en unos minutos.</p></SectionCard> : null}
+
     <SectionCard title="Acciones rapidas">
       <div className="grid gap-2 sm:grid-cols-2">
         <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">{review.documents.length} detectados · {highCount} listos para aprobar</p>
@@ -128,3 +139,16 @@ function CorrectionForm({ document, disabled, onCancel, onSave }: { document: Re
 function Meta({ label, value, confidence, source }: { label: string; value: string; confidence?: DetectionConfidence; source?: "extracted" | "inferred" | "inferred_from_itinerary" }) { return <div className="rounded-md bg-mist px-3 py-2"><dt className="text-[10px] font-black uppercase tracking-wide text-sea">{label}</dt><dd className="mt-1 font-bold text-ink">{value} {confidence ? <Confidence value={confidence} /> : null}{source === "inferred" || source === "inferred_from_itinerary" ? " · inferido desde itinerario" : null}</dd></div>; }
 function Confidence({ value }: { value: DetectionConfidence }) { return <span className={value === "high" ? "text-emerald-700" : value === "medium" ? "text-amber-700" : "text-red-700"}>{value}</span>; }
 function emptyReview(): DocumentReviewIndex { return { tripSlug: "europa-2026", generatedAt: new Date(0).toISOString(), privateIncomingDirectory: "DOCUMENT_STORAGE/europa-2026/incoming", documents: [], duplicates: [], warnings: [] }; }
+
+function normalizeReview(value: unknown): DocumentReviewIndex {
+  const fallback = emptyReview();
+  if (!value || typeof value !== "object") return fallback;
+  const review = value as Partial<DocumentReviewIndex>;
+  return {
+    ...fallback,
+    ...review,
+    documents: Array.isArray(review.documents) ? review.documents : [],
+    duplicates: Array.isArray(review.duplicates) ? review.duplicates : [],
+    warnings: Array.isArray(review.warnings) ? review.warnings : []
+  };
+}
