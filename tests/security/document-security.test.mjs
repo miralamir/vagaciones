@@ -13,6 +13,8 @@ await testImporterSafety();
 await testDocumentStorageSafety();
 await testNoPrivateContentInGit();
 await testReviewRouteExists();
+await testServerAuthorization();
+await testPrivateIndexesAndDryRun();
 
 if (failures.length > 0) {
   console.error(failures.join("\n"));
@@ -91,6 +93,26 @@ async function testReviewRouteExists() {
   const route = path.join(root, "apps", "web", "src", "app", "api", "documents", "review", "route.ts");
   assert(await fileExists(page), "Document review page route is missing.");
   assert(await fileExists(route), "Document review API route is missing.");
+}
+
+async function testServerAuthorization() {
+  const auth = await readFile(path.join(root, "apps", "web", "src", "lib", "server", "document-auth.ts"), "utf8");
+  const routes = await Promise.all([
+    "index/route.ts", "[documentId]/route.ts", "review/route.ts", "review/approve/route.ts", "review/correct/route.ts", "review/status/route.ts"
+  ].map((file) => readFile(path.join(root, "apps", "web", "src", "app", "api", "documents", ...file.split("/")), "utf8")));
+  assert(auth.includes("DOCUMENT_ACCESS_TOKEN"), "Document access token is not required server-side.");
+  assert(auth.includes("HttpOnly") && auth.includes("SameSite=Strict"), "Document session cookie is not hardened.");
+  assert(routes.every((route) => route.includes("requireDocumentAccess")), "A document API route lacks server authorization.");
+}
+
+async function testPrivateIndexesAndDryRun() {
+  const importer = await readFile(path.join(root, "scripts", "import-documents.mjs"), "utf8");
+  const fileRoute = await readFile(path.join(root, "apps", "web", "src", "app", "api", "documents", "[documentId]", "route.ts"), "utf8");
+  assert(importer.includes("--dry-run") && importer.includes("Dry run"), "Importer dry-run is missing.");
+  assert(importer.includes('resolveInsideDocumentStorage(tripSlug, "index.json")'), "Approved index is not private.");
+  assert(!importer.includes("document-index.generated.ts"), "Importer still writes versioned TypeScript index.");
+  assert(fileRoute.includes('reviewStatus === "approved"'), "Incoming documents can still be served.");
+  assert(fileRoute.includes("X-Content-Type-Options"), "Document response lacks nosniff header.");
 }
 
 async function fileExists(filePath) {

@@ -1,13 +1,14 @@
-import { readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import type { DocumentCategory } from "@/lib/document-types";
 import type { DocumentReviewIndex } from "@/lib/document-review-types";
+import { requireDocumentAccess } from "@/lib/server/document-auth";
+import { readPrivateReview, writePrivateReview } from "@/lib/server/document-index";
 
 export const dynamic = "force-dynamic";
 
 const categories: DocumentCategory[] = ["vuelos", "hoteles", "trenes", "crucero", "entradas", "seguro", "traslados", "identidad", "otros"];
 
 export async function POST(request: Request) {
+  const denied = await requireDocumentAccess(request); if (denied) return denied;
   const body = await request.json() as {
     documentId?: string;
     patch?: { category?: DocumentCategory; linkedReservation?: string; city?: string; associatedDays?: number[] };
@@ -26,8 +27,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "Dias asociados invalidos." }, { status: 400 });
   }
 
-  const reviewPath = path.join(process.cwd(), "..", "..", "data", "trips", "europa-2026", "document-review.json");
-  const review = JSON.parse(await readFile(reviewPath, "utf8")) as DocumentReviewIndex;
+  const review = await readPrivateReview("europa-2026");
   const document = review.documents.find((entry) => entry.id === body.documentId);
 
   if (!document) {
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     documents: review.documents.map((entry) => entry.id === body.documentId ? nextDocument : entry)
   };
 
-  await writeFile(reviewPath, `${JSON.stringify(nextReview, null, 2)}\n`, "utf8");
+  await writePrivateReview("europa-2026", nextReview);
   return Response.json({ ok: true, document: nextDocument });
 }
 

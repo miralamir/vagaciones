@@ -6,17 +6,15 @@ import { detectDocument, extractPdfText } from "./lib/document-intelligence.mjs"
 const root = process.cwd();
 const args = process.argv.slice(2);
 const tripSlug = readArg("--trip") ?? "europa-2026";
+const dryRun = args.includes("--dry-run");
 const storageRoot = getDocumentStorageRoot();
 const tripStorageRoot = resolveInsideDocumentStorage(tripSlug);
 const incomingRoot = resolveInsideDocumentStorage(tripSlug, "incoming");
 const documentsRoot = resolveInsideDocumentStorage(tripSlug, "documents");
 const reportsRoot = resolveInsideDocumentStorage(tripSlug, "reports");
-const publicTripRoot = path.join(root, "data", "trips", tripSlug);
-const reviewJson = path.join(publicTripRoot, "document-review.json");
-const reportJson = path.join(publicTripRoot, "document-import-report.json");
-const generatedReviewTs = path.join(root, "apps", "web", "src", "lib", "document-review.generated.ts");
-const generatedIndexTs = path.join(root, "apps", "web", "src", "lib", "document-index.generated.ts");
-const approvedIndexJson = path.join(publicTripRoot, "document-index.json");
+const reviewJson = resolveInsideDocumentStorage(tripSlug, "review.json");
+const reportJson = resolveInsideDocumentStorage(tripSlug, "reports", "latest.json");
+const approvedIndexJson = resolveInsideDocumentStorage(tripSlug, "index.json");
 const previousReview = await readJsonIfPresent(reviewJson);
 const previousApprovedIndex = await readJsonIfPresent(approvedIndexJson);
 const previousStatusByHash = new Map((previousReview?.documents ?? []).map((document) => [document.sha256, document.reviewStatus]));
@@ -40,11 +38,14 @@ const mimeByExtension = new Map([
   [".webp", "image/webp"],
   [".gif", "image/gif"]
 ]);
+const supportedExtensions = new Set(mimeByExtension.keys());
 
 const foundFiles = [];
-await mkdir(incomingRoot, { recursive: true });
-await mkdir(documentsRoot, { recursive: true });
-await mkdir(reportsRoot, { recursive: true });
+if (!dryRun) {
+  await mkdir(incomingRoot, { recursive: true });
+  await mkdir(documentsRoot, { recursive: true });
+  await mkdir(reportsRoot, { recursive: true });
+}
 await walk(incomingRoot);
 
 const seenHashes = new Map();
@@ -53,6 +54,10 @@ const duplicates = [];
 const warnings = [];
 
 for (const file of foundFiles.sort((a, b) => a.relativePath.localeCompare(b.relativePath))) {
+  if (!supportedExtensions.has(file.extension.toLowerCase())) {
+    pending.push({ id: `review-${tripSlug}-unsupported-${createHash("sha256").update(file.relativePath).digest("hex").slice(0, 12)}`, visibleName: toVisibleName(file.name), category: "otros", date: null, associatedDays: [], city: null, linkedReservation: null, passengers: [], originalFileName: file.name, originalRelativePath: path.relative(tripStorageRoot, file.fullPath).replaceAll("\\", "/"), mimeType: "application/octet-stream", availableOffline: false, containsQR: false, sensitivity: "internal", requiresConfirmation: true, offlinePolicy: "never", retentionPolicy: "deleteAfterReview", containsPersonalData: false, containsFinancialData: false, containsLocationData: false, observations: "Formato no admitido.", sizeBytes: file.size, sha256: null, reviewStatus: "error", warnings: ["Formato no admitido. Solo PDF e imagenes permitidas."], extractionStatus: "requires_ocr", extractionPageCount: 0, detections: {}, overallConfidence: "low" });
+    continue;
+  }
   const buffer = await readFile(file.fullPath);
   const sha256 = createHash("sha256").update(buffer).digest("hex");
   const extraction = file.extension.toLowerCase() === ".pdf"
@@ -103,7 +108,7 @@ for (const file of foundFiles.sort((a, b) => a.relativePath.localeCompare(b.rela
     observations: "",
     sizeBytes: file.size,
     sha256,
-    reviewStatus: previousStatusByHash.get(sha256) ?? "pending",
+    reviewStatus: previousStatusByHash.get(sha256) ?? ((previousApprovedIndex?.documents ?? []).some((document) => document.sha256 === sha256) ? "duplicate" : "pending"),
     warnings: buildWarnings(file.relativePath, sensitivity, containsQR, extraction.status),
     extractionStatus: extraction.status,
     extractionPageCount: extraction.pageCount,
@@ -143,23 +148,17 @@ const report = {
   warnings
 };
 
-await writeFile(reviewJson, `${JSON.stringify(review, null, 2)}\n`, "utf8");
-await writeFile(reportJson, `${JSON.stringify(report, null, 2)}\n`, "utf8");
-await writeFile(path.join(reportsRoot, `import-${Date.now()}.json`), `${JSON.stringify(report, null, 2)}\n`, "utf8").catch(() => undefined);
-await writeFile(
-  generatedReviewTs,
-  `import type { DocumentReviewIndex } from "./document-review-types";\n\nexport const documentReview = {\n  "tripSlug": "${tripSlug}",\n  "generatedAt": "1970-01-01T00:00:00.000Z",\n  "privateIncomingDirectory": "${tripSlug}/incoming",\n  "documents": [],\n  "duplicates": [],\n  "warnings": []\n} as const satisfies DocumentReviewIndex;\n`,
-  "utf8"
-);
-await writeFile(approvedIndexJson, `${JSON.stringify(approvedIndex, null, 2)}\n`, "utf8");
-await writeFile(
-  generatedIndexTs,
-  `import type { DocumentIndex } from "./document-types";\n\nexport const documentIndex = ${JSON.stringify(approvedIndex, null, 2)} as const satisfies DocumentIndex;\n`,
-  "utf8"
-);
+if (!dryRun) {
+  await writeFile(reviewJson, `${JSON.stringify(review, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  await writeFile(reportJson, `${JSON.stringify(report, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  await writeFile(path.join(reportsRoot, `import-${Date.now()}.json`), `${JSON.stringify(report, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  await writeFile(approvedIndexJson, `${JSON.stringify(approvedIndex, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+}
 
 console.log(`Scanned ${foundFiles.length} file(s). Pending review: ${pending.length}. Duplicates: ${duplicates.length}.`);
 console.log(`Private incoming folder: ${incomingRoot}`);
+console.log(JSON.stringify(report, null, 2));
+if (dryRun) console.log("Dry run: no se escribieron indices ni reportes.");
 
 function readArg(name) {
   const index = args.indexOf(name);

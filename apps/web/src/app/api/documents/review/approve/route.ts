@@ -1,44 +1,32 @@
 import { constants } from "node:fs";
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import type { DocumentReviewIndex } from "@/lib/document-review-types";
 import { DocumentStorageError, getTripDocumentsDirectory, resolveTripStoragePath } from "@/lib/server/document-storage";
+import { requireDocumentAccess } from "@/lib/server/document-auth";
+import { readPrivateIndex, readPrivateReview, writePrivateIndex, writePrivateReview } from "@/lib/server/document-index";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const denied = await requireDocumentAccess(request); if (denied) return denied;
   const { documentId } = await request.json() as { documentId?: string };
 
   if (!documentId) {
     return Response.json({ ok: false, error: "documentId requerido" }, { status: 400 });
   }
 
-  const tripRoot = path.join(process.cwd(), "..", "..", "data", "trips", "europa-2026");
-  const reviewPath = path.join(tripRoot, "document-review.json");
-  const indexPath = path.join(tripRoot, "document-index.json");
-
-  const review = JSON.parse(await readFile(reviewPath, "utf8")) as DocumentReviewIndex;
+  const review = await readPrivateReview("europa-2026");
   const candidate = review.documents.find((document) => document.id === documentId);
 
   if (!candidate) {
     return Response.json({ ok: false, error: "Documento no encontrado" }, { status: 404 });
   }
 
-  let index: DocumentIndex = {
-    tripSlug: "europa-2026",
-    generatedAt: new Date().toISOString(),
-    sourceDirectories: ["DOCUMENT_STORAGE/europa-2026/documents"],
-    documents: []
-  };
+  const index = await readPrivateIndex("europa-2026");
 
-  try {
-    index = JSON.parse(await readFile(indexPath, "utf8")) as DocumentIndex;
-  } catch {
-    // Keep empty index.
-  }
-
-  const approvedId = candidate.id.replace(/^review-/, "doc-");
+  const approvedId = `doc-${candidate.sha256.slice(0, 24)}`;
   const safeFileName = sanitizeFileName(candidate.originalFileName);
   const storageRelativePath = `documents/${candidate.sha256.slice(0, 16)}-${safeFileName}`;
 
@@ -84,8 +72,8 @@ export async function POST(request: Request) {
     )
   };
 
-  await writeFile(indexPath, `${JSON.stringify(nextIndex, null, 2)}\n`, "utf8");
-  await writeFile(reviewPath, `${JSON.stringify(nextReview, null, 2)}\n`, "utf8");
+  await writePrivateIndex("europa-2026", nextIndex);
+  await writePrivateReview("europa-2026", nextReview);
 
   return Response.json({ ok: true, document: approvedDocument });
 }

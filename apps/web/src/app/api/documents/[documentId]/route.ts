@@ -1,18 +1,18 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
+import { requireDocumentAccess } from "@/lib/server/document-auth";
+import { readPrivateIndex } from "@/lib/server/document-index";
 import { DocumentStorageError, resolveTripStoragePath } from "@/lib/server/document-storage";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ documentId: string }> }
 ) {
+  const denied = await requireDocumentAccess(request); if (denied) return denied;
   const { documentId } = await params;
-  const indexPath = path.join(process.cwd(), "..", "..", "data", "trips", "europa-2026", "document-links.json");
-  const links = JSON.parse(await readFile(indexPath, "utf8")) as Array<{ id: string; fileName: string; title: string; sensitivity: "public" | "internal" | "private" | "highly_sensitive"; requiresConfirmation: boolean }>;
-  const documents = links.map((link) => ({ id: link.id, visibleName: link.title, originalFileName: link.fileName, storageRelativePath: `incoming/${link.fileName}`, mimeType: "application/pdf", availableOffline: false, requiresConfirmation: link.requiresConfirmation, sensitivity: link.sensitivity, offlinePolicy: link.sensitivity === "highly_sensitive" ? "userApproved" : "currentTrip" }));
-  const document = documents.find((item) => item.id === documentId);
+  const index = await readPrivateIndex("europa-2026");
+  const document = index.documents.find((item) => item.id === documentId && item.reviewStatus === "approved");
 
   if (!document) {
     return new Response("Documento no encontrado", { status: 404 });
@@ -36,7 +36,8 @@ export async function GET(
       headers: {
         "Content-Type": document.mimeType,
         "Content-Disposition": `inline; filename="${encodeURIComponent(document.originalFileName)}"`,
-        "Cache-Control": cacheable ? "public, max-age=31536000, immutable" : "no-store",
+        "Cache-Control": cacheable ? "private, max-age=31536000, immutable" : "no-store",
+        "X-Content-Type-Options": "nosniff",
         "X-Vagaciones-Cacheable": cacheable ? "true" : "false",
         "X-Robots-Tag": "noindex, nofollow, noarchive"
       }

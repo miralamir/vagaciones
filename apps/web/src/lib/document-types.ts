@@ -95,7 +95,7 @@ export type IndexedDocument = {
   observations: string;
   sizeBytes: number;
   sha256: string;
-  reviewStatus: "pending" | "approved" | "ignored";
+  reviewStatus: "pending" | "approved" | "ignored" | "rejected" | "duplicate" | "error";
   warnings: readonly string[];
   extractionStatus?: "extracted" | "requires_ocr";
   extractionPageCount?: number;

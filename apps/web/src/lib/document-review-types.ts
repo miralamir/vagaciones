@@ -1,7 +1,7 @@
 import type { IndexedDocument } from "./document-types";
 
 export type ReviewDocument = IndexedDocument & {
-  reviewStatus: "pending" | "approved" | "ignored";
+  reviewStatus: "pending" | "approved" | "ignored" | "rejected" | "duplicate" | "error";
 };
 
 export type DocumentReviewIndex = {

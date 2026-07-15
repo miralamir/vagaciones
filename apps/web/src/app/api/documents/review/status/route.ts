@@ -1,0 +1,5 @@
+import { requireDocumentAccess } from "@/lib/server/document-auth";
+import { readPrivateReview, writePrivateReview } from "@/lib/server/document-index";
+export const dynamic = "force-dynamic";
+const states = new Set(["ignored", "rejected"]);
+export async function POST(request: Request) { const denied = await requireDocumentAccess(request); if (denied) return denied; const body = await request.json().catch(() => ({})) as { documentId?: string; status?: string }; if (!body.documentId || !body.status || !states.has(body.status)) return Response.json({ ok: false, error: "Estado invalido." }, { status: 400 }); const review = await readPrivateReview("europa-2026"); const document = review.documents.find((item) => item.id === body.documentId); if (!document) return Response.json({ ok: false, error: "Documento no encontrado." }, { status: 404 }); const next = { ...review, documents: review.documents.map((item) => item.id === body.documentId ? { ...item, reviewStatus: body.status as "ignored" | "rejected" } : item) }; await writePrivateReview("europa-2026", next); return Response.json({ ok: true }); }

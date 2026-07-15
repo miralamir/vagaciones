@@ -46,6 +46,12 @@ export function DocumentReviewScreen() {
     const candidates = review.documents.filter((document) => document.overallConfidence === "high" && document.sensitivity !== "highly_sensitive" && document.reviewStatus === "pending");
     for (const document of candidates) await approveDocument(document.id);
   };
+  const setStatus = async (documentId: string, status: "ignored" | "rejected") => {
+    setSaving(documentId);
+    const response = await fetch("/api/documents/review/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documentId, status }) });
+    if (response.ok) updateDocument(documentId, { reviewStatus: status });
+    setSaving(null);
+  };
 
   const saveCorrection = async (document: ReviewDocument, form: HTMLFormElement) => {
     const data = new FormData(form);
@@ -113,7 +119,7 @@ export function DocumentReviewScreen() {
           {document.detections?.ignoredDates?.length ? <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm"><p className="font-black text-amber-800">Fechas secundarias ignoradas</p>{document.detections.ignoredDates.map((date) => <p className="mt-1 font-semibold text-amber-800" key={`${date.value}-${date.classification}`}>{date.value} · {date.classification} · {date.reason}</p>)}</div> : null}
           {document.detections?.reviewReason ? <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">Requiere revision: {document.detections.reviewReason}</p> : null}
           {document.warnings.length ? <ul className="mt-3 grid gap-1">{document.warnings.map((warning) => <li className="rounded-md bg-red-50 px-2 py-2 text-sm font-bold text-red-700" key={warning}>{warning}</li>)}</ul> : null}
-          {editing === document.id ? <CorrectionForm document={document} disabled={saving === document.id} onCancel={() => setEditing(null)} onSave={(form) => { void saveCorrection(document, form); }} /> : <div className="mt-3 grid grid-cols-3 gap-2"><RiskConfirmationDialog action="Aprobar documento" dataShared={document.visibleName} destination="Experiencia visible de VAGACIONES" consequence="Este documento quedara disponible en la app cuando se publique el indice aprobado." onConfirm={() => { void approveDocument(document.id); }}>{(open) => <button className="rounded-md bg-sea px-3 py-3 font-black text-white disabled:opacity-50" disabled={saving === document.id || document.reviewStatus === "approved"} onClick={open} type="button">Aprobar</button>}</RiskConfirmationDialog><button className="rounded-md bg-mist px-3 py-3 font-black text-ink" onClick={() => setEditing(document.id)} type="button">Corregir</button><button className="rounded-md bg-ink px-3 py-3 font-black text-white" onClick={() => updateDocument(document.id, { reviewStatus: "ignored" })} type="button">Ignorar</button></div>}
+          {editing === document.id ? <CorrectionForm document={document} disabled={saving === document.id} onCancel={() => setEditing(null)} onSave={(form) => { void saveCorrection(document, form); }} /> : <div className="mt-3 grid grid-cols-4 gap-2"><RiskConfirmationDialog action="Aprobar documento" dataShared={document.visibleName} destination="Experiencia visible de VAGACIONES" consequence="Este documento quedara disponible en la app cuando se publique el indice aprobado." onConfirm={() => { void approveDocument(document.id); }}>{(open) => <button className="rounded-md bg-sea px-3 py-3 font-black text-white disabled:opacity-50" disabled={saving === document.id || document.reviewStatus === "approved"} onClick={open} type="button">Aprobar</button>}</RiskConfirmationDialog><button className="rounded-md bg-mist px-3 py-3 font-black text-ink" onClick={() => setEditing(document.id)} type="button">Corregir</button><button className="rounded-md bg-ink px-3 py-3 font-black text-white" onClick={() => { void setStatus(document.id, "ignored"); }} type="button">Ignorar</button><button className="rounded-md bg-red-50 px-3 py-3 font-black text-red-700" onClick={() => { void setStatus(document.id, "rejected"); }} type="button">Rechazar</button></div>}
         </article>)}
         {documents.length === 0 ? <p className="rounded-md bg-mist px-3 py-3 font-black text-ink/70">No hay documentos para este filtro.</p> : null}
       </div>
