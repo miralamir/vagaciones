@@ -11,6 +11,7 @@ import { AppShell } from "./AppShell";
 import { AccordionSection } from "./AccordionSection";
 import { FlightDocumentStatusCard } from "./FlightDocumentStatusCard";
 import { RiskConfirmationDialog } from "./RiskConfirmationDialog";
+import { DocumentUpload } from "./DocumentUpload";
 
 const categories: Array<{ id: DocumentCategory; label: string }> = [
   { id: "vuelos", label: "Vuelos" },
@@ -86,6 +87,7 @@ export function DocumentsScreen() {
           </div>
           {message ? <p className="mt-3 rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">{message}</p> : null}
         </div>
+        <DocumentUpload />
 
         {flightStatuses.length > 0 ? <AccordionSection badge={flightStatuses.length} defaultOpen title="Estado de vuelos">{flightStatuses.map((status) => <FlightDocumentStatusCard key={status.flightLabel} status={status} />)}</AccordionSection> : null}
         {futureExpected.length ? <AccordionSection badge={futureExpected.length} title="Futuros esperados"><div className="grid gap-3">{futureExpected.map((document) => <DocumentCard document={document} key={document.id} onOpen={() => router.push(getViewerUrl(document))} onSave={save} saved={savedIds.includes(document.id)} />)}</div></AccordionSection> : null}

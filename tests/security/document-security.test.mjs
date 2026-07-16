@@ -98,7 +98,7 @@ async function testReviewRouteExists() {
 async function testServerAuthorization() {
   const auth = await readFile(path.join(root, "apps", "web", "src", "lib", "server", "document-auth.ts"), "utf8");
   const routes = await Promise.all([
-    "index/route.ts", "[documentId]/route.ts", "review/route.ts", "review/approve/route.ts", "review/correct/route.ts", "review/status/route.ts"
+    "index/route.ts", "[documentId]/route.ts", "review/route.ts", "review/approve/route.ts", "review/correct/route.ts", "review/status/route.ts", "upload/route.ts"
   ].map((file) => readFile(path.join(root, "apps", "web", "src", "app", "api", "documents", ...file.split("/")), "utf8")));
   assert(auth.includes("DOCUMENT_ACCESS_TOKEN"), "Document access token is not required server-side.");
   assert(auth.includes("HttpOnly") && auth.includes("SameSite=Strict"), "Document session cookie is not hardened.");

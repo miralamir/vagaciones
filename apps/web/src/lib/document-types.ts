@@ -102,6 +102,8 @@ export type IndexedDocument = {
   detections?: DocumentDetections;
   overallConfidence?: DetectionConfidence;
   flightDocumentKind?: "reservation" | "e_ticket" | "boarding_pass" | "qr";
+  declaredDocumentKind?: "boarding_pass" | "ticket" | "reservation" | "other";
+  declaredTripSegment?: string | null;
 };
 
 export type DocumentIndex = {

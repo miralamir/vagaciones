@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 const cookieName = "vagaciones_document_access";
 const attempts = new Map<string, { count: number; resetAt: number }>();
+const uploadAttempts = new Map<string, { count: number; resetAt: number }>();
 
 function token() {
   const value = process.env.DOCUMENT_ACCESS_TOKEN;
@@ -39,6 +40,15 @@ export function allowLogin(request: Request) {
   const current = attempts.get(key);
   if (current && current.resetAt > now && current.count >= 8) return false;
   attempts.set(key, { count: current && current.resetAt > now ? current.count + 1 : 1, resetAt: now + 60_000 });
+  return true;
+}
+
+export function allowDocumentUpload(request: Request) {
+  const key = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  const now = Date.now();
+  const current = uploadAttempts.get(key);
+  if (current && current.resetAt > now && current.count >= 12) return false;
+  uploadAttempts.set(key, { count: current && current.resetAt > now ? current.count + 1 : 1, resetAt: now + 60_000 });
   return true;
 }
 
