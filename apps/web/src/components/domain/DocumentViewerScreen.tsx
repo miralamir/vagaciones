@@ -14,6 +14,9 @@ export function DocumentViewerScreen({ documentId }: { documentId: string }) {
   const [qrMode, setQrMode] = useState(false);
   const [brightMode, setBrightMode] = useState(true);
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
   const isIdentity = document?.category === "otros" && /pass|pasaporte|dni|identity|identidad/i.test(document.visibleName);
   const needsConfirmation = Boolean(document?.requiresConfirmation);
 
@@ -25,6 +28,46 @@ export function DocumentViewerScreen({ documentId }: { documentId: string }) {
       .then((index: DocumentIndex) => setDocument(index.documents.find((item) => item.id === documentId)))
       .finally(() => setLoaded(true));
   }, [documentId]);
+
+  useEffect(() => {
+    if (!document || document.mimeType === "application/pdf" || ((isIdentity || needsConfirmation) && !identityConfirmed)) {
+      setImageUrl("");
+      setImageLoading(false);
+      setImageError(null);
+      return;
+    }
+
+    let active = true;
+    let objectUrl = "";
+    setImageLoading(true);
+    setImageError(null);
+
+    void fetch(fileUrl, {
+      cache: "no-store",
+      credentials: "include",
+      headers: { Accept: "image/*" }
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`No se pudo cargar la imagen (${response.status}).`);
+        return response.blob();
+      })
+      .then((blob) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setImageUrl(objectUrl);
+      })
+      .catch((error: unknown) => {
+        if (active) setImageError(error instanceof Error ? error.message : "No se pudo cargar la imagen.");
+      })
+      .finally(() => {
+        if (active) setImageLoading(false);
+      });
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [document, fileUrl, identityConfirmed, isIdentity, needsConfirmation]);
 
   useEffect(() => {
     if (!qrMode) return;
@@ -89,13 +132,18 @@ export function DocumentViewerScreen({ documentId }: { documentId: string }) {
 
   const viewer = document.mimeType === "application/pdf" ? (
     <iframe className="h-[70dvh] w-full rounded-lg bg-white" src={fileUrl} title={document.visibleName} />
+  ) : imageLoading ? (
+    <div className="grid h-[70dvh] place-items-center rounded-lg bg-white font-bold text-ink/65">Cargando imagen...</div>
+  ) : imageError || !imageUrl ? (
+    <div className="grid h-[70dvh] place-items-center rounded-lg bg-white p-5 text-center font-bold text-coral">{imageError ?? "Imagen no disponible."}</div>
   ) : (
     <div className="grid h-[70dvh] place-items-center overflow-auto rounded-lg bg-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         alt={document.visibleName}
         className="max-h-none max-w-none transition-transform"
-        src={fileUrl}
+        src={imageUrl}
+        onError={() => setImageError("La imagen no se pudo decodificar en este dispositivo.")}
         style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
       />
     </div>
@@ -174,8 +222,9 @@ export function DocumentViewerScreen({ documentId }: { documentId: string }) {
                 {document.mimeType === "application/pdf" ? (
                   <iframe className="h-full min-h-[70dvh] w-full bg-white" src={fileUrl} title={document.visibleName} />
                 ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img alt={document.visibleName} className="max-h-full max-w-full" src={fileUrl} />
+                  <>
+                    {imageUrl ? <img alt={document.visibleName} className="max-h-full max-w-full" onError={() => setImageError("La imagen no se pudo decodificar en este dispositivo.")} src={imageUrl} /> : <p className="font-bold text-coral">{imageError ?? "Imagen no disponible."}</p>}
+                  </>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2">

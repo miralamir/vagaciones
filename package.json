@@ -10,7 +10,7 @@
     "lint": "pnpm --filter @vagaciones/web lint",
     "typecheck": "pnpm --filter @vagaciones/web typecheck",
     "import:documents": "node scripts/import-documents.mjs",
-    "test:security": "node tests/security/document-security.test.mjs && node tests/security/document-intelligence.test.mjs && node tests/security/document-review-screen.test.mjs && node tests/security/document-upload.test.mjs",
+    "test:security": "node tests/security/document-security.test.mjs && node tests/security/document-intelligence.test.mjs && node tests/security/document-review-screen.test.mjs && node tests/security/document-upload.test.mjs && node tests/security/document-image.test.mjs",
     "diagnose:build": "node scripts/diagnose-build.mjs"
   },
   "packageManager": "pnpm@9.15.0",
