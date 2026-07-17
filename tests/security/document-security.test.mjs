@@ -100,7 +100,8 @@ async function testServerAuthorization() {
   const routes = await Promise.all([
     "index/route.ts", "[documentId]/route.ts", "review/route.ts", "review/approve/route.ts", "review/correct/route.ts", "review/status/route.ts", "upload/route.ts"
   ].map((file) => readFile(path.join(root, "apps", "web", "src", "app", "api", "documents", ...file.split("/")), "utf8")));
-  assert(auth.includes("DOCUMENT_ACCESS_TOKEN"), "Document access token is not required server-side.");
+  assert(auth.includes("DOCUMENT_ACCESS_PASSWORD_HASH"), "Password hash is not required server-side.");
+  assert(auth.includes("DOCUMENT_ACCESS_TOKEN"), "Emergency document access token fallback is missing.");
   assert(auth.includes("HttpOnly") && auth.includes("SameSite=Strict"), "Document session cookie is not hardened.");
   assert(routes.every((route) => route.includes("requireDocumentAccess")), "A document API route lacks server authorization.");
 }
