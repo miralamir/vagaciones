@@ -5,6 +5,8 @@ const CACHE_NAME = "vagaciones-documents-v1";
 const STATE_KEY = "vagaciones-offline-documents";
 const SYNC_KEY = "vagaciones-offline-last-sync";
 const METADATA_KEY = "vagaciones-offline-document-metadata";
+const TRIP_DATA_CACHE = "vagaciones-trip-data-v1";
+const NEXT_DAY_KEY = "vagaciones-offline-next-day";
 
 export function getSavedDocumentIds() {
   if (typeof window === "undefined") return [] as string[];
@@ -49,7 +51,19 @@ export async function saveDocumentOffline(document: IndexedDocument) {
 export async function clearOfflineDocuments() {
   if (typeof window === "undefined") return;
   await caches.delete(CACHE_NAME);
+  await caches.delete(TRIP_DATA_CACHE);
   window.localStorage.removeItem(STATE_KEY);
   window.localStorage.removeItem(METADATA_KEY);
   window.localStorage.removeItem(SYNC_KEY);
+  window.localStorage.removeItem(NEXT_DAY_KEY);
+}
+
+export async function saveNextDayOffline(day: number, reservations: unknown[], documents: IndexedDocument[]) {
+  if (typeof window === "undefined") return;
+  const cache = await caches.open(TRIP_DATA_CACHE);
+  const safeDocuments = documents.filter((document) => document.sensitivity !== "highly_sensitive" && !document.requiresConfirmation);
+  const snapshot = { day, reservations, documents: safeDocuments, savedAt: new Date().toISOString() };
+  const response = new Response(JSON.stringify(snapshot), { headers: { "Content-Type": "application/json" } });
+  await cache.put(`/offline/trip-day-${day}.json`, response);
+  window.localStorage.setItem(NEXT_DAY_KEY, JSON.stringify({ day, savedAt: snapshot.savedAt, protectedDocumentsPending: documents.length - safeDocuments.length }));
 }

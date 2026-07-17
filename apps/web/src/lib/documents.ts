@@ -19,6 +19,11 @@ export function getDocumentsForDay(day: number, source = getIndexedDocuments()) 
   return source.filter((document) => document.scope !== "trip_global" && (document.associatedDays.includes(day) || (document.relatedReservationIds ?? []).some((id) => reservationIds.has(id))));
 }
 
+export function getDocumentsForReservations(reservationIds: readonly string[], source = getIndexedDocuments()) {
+  const ids = new Set(reservationIds);
+  return source.filter((document) => (document.relatedReservationIds ?? []).some((id) => ids.has(id)));
+}
+
 export function getTripGlobalDocuments(source = getIndexedDocuments()) {
   return source.filter((document) => document.scope === "trip_global");
 }

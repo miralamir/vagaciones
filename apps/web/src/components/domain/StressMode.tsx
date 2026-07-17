@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import type { IndexedDocument } from "@/lib/document-types";
+import type { DeparturePlan, NextTransfer } from "@/lib/trip-today";
 import type { TripDay } from "@/lib/trip-data";
 import { openExternalUrl, RiskConfirmationDialog } from "./RiskConfirmationDialog";
 
-export function StressMode({ day }: { day: TripDay }) {
+export function StressMode({ day, nextTransfer, nextDocument, departurePlan }: { day: TripDay; nextTransfer?: NextTransfer; nextDocument?: IndexedDocument; departurePlan?: DeparturePlan }) {
   const [open, setOpen] = useState(false);
-  const qrHref = day.quickDocuments.qr;
+  const destination = nextTransfer?.reservation?.destination ?? day.transfer.destination;
+  const eventTime = departurePlan?.transportDepartureTime ?? nextTransfer?.time ?? day.transfer.limitLeaveTime;
+  const leaveTime = departurePlan?.comfortableDepartureTime ?? day.transfer.comfortableLeaveTime;
 
   return (
     <>
@@ -27,20 +31,21 @@ export function StressMode({ day }: { day: TripDay }) {
               </button>
             </div>
             <div className="grid content-center gap-4">
-              <EmergencyBlock label="Destino" value={day.transfer.destination} />
-              <EmergencyBlock label="Hora para salir" value={day.transfer.limitLeaveTime} />
-              {qrHref ? (
-                <a className="rounded-lg bg-white px-5 py-5 text-center text-xl font-black text-ink" href={qrHref}>
-                  QR
-                </a>
+              <EmergencyBlock label="Destino" value={destination} />
+              <EmergencyBlock label="Hora" value={eventTime} />
+              <EmergencyBlock label="Salir a las" value={leaveTime} />
+              {nextDocument ? (
+                <RiskConfirmationDialog action="Abrir documento de emergencia" dataShared={nextDocument.visibleName} destination="Visor de VAGACIONES" consequence="Se mostrará el documento del próximo evento." onConfirm={() => { window.location.href = `/trips/europa-2026/documentos/${nextDocument.id}`; }}>
+                  {(confirm) => <button className="rounded-lg bg-white px-5 py-5 text-center text-xl font-black text-ink" onClick={confirm} type="button">{nextDocument.containsQR ? "QR / documento" : "Documento"}</button>}
+                </RiskConfirmationDialog>
               ) : (
                 <div className="rounded-lg bg-white px-5 py-5 text-center text-xl font-black text-ink">
-                  Disponible despues del check-in
+                  Documento pendiente
                 </div>
               )}
               <RiskConfirmationDialog
                 action="Abrir mapa de emergencia"
-                dataShared={day.transfer.destination}
+                dataShared={destination}
                 destination="Google Maps"
                 consequence="Se abrira una aplicacion externa con ubicacion o destino."
                 onConfirm={() => openExternalUrl(day.transfer.mapsUrl)}

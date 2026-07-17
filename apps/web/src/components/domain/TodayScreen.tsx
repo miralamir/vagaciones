@@ -4,18 +4,20 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import checklists from "../../../../../data/trips/europa-2026/checklists.json";
-import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
+import { getDocumentsForDay, getDocumentsForReservations, getViewerUrl } from "@/lib/documents";
+import { getSavedDocumentIds, saveDocumentOffline, saveNextDayOffline } from "@/lib/document-offline";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { canRequestUber, getPlaceMapsUrl, getPlacesForDay, type Place } from "@/lib/places";
 import { getPersonalChecklistItems, PERSONAL_CHECKLISTS_CHANGED, type PersonalChecklistItem } from "@/lib/personal-checklists";
 import { getNextTransfer, getTripToday } from "@/lib/trip-today";
-import { getStatusLabel, reservations } from "@/lib/trip-data";
+import { getStatusLabel, getTripDay, reservations, trip } from "@/lib/trip-data";
 import { getRailPlansForDay, railPlanLabel } from "@/lib/rail-plans";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
 import { AccordionSection } from "./AccordionSection";
 import { openExternalUrl, openUberToDestination, RiskConfirmationDialog } from "./RiskConfirmationDialog";
 import { DocumentUpload } from "./DocumentUpload";
+import { StressMode } from "./StressMode";
 
 type ChecklistItem = { id: string; label: string; priority: "high" | "medium" | "low" };
 
@@ -26,6 +28,9 @@ export function TodayScreen() {
   const [documents, setDocuments] = useState<IndexedDocument[]>([]);
   const [completedChecklist, setCompletedChecklist] = useState<string[]>([]);
   const [personalChecklist, setPersonalChecklist] = useState<PersonalChecklistItem[]>([]);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [savingNextDay, setSavingNextDay] = useState(false);
+  const [offlineMessage, setOfflineMessage] = useState<string | null>(null);
   const today = getTripToday(now, Number.isInteger(override) && override >= 0 ? override : undefined);
   const day = today.activeDay;
   const nextTransfer = getNextTransfer(day, today.departurePlan);
@@ -34,6 +39,8 @@ export function TodayScreen() {
   const usefulPlaces = useMemo(() => getPlacesForDay(day.day).sort((a, b) => placeRank(a, day.reservationIds) - placeRank(b, day.reservationIds)).slice(0, 4), [day.day, day.reservationIds]);
   const relatedReservations = useMemo(() => reservations.filter((reservation) => day.reservationIds.includes(reservation.id)), [day.reservationIds]);
   const railPlans = useMemo(() => getRailPlansForDay(day.day), [day.day]);
+  const nextEventReservationIds = today.departurePlan?.relatedReservationIds ?? (nextTransfer.reservation ? [nextTransfer.reservation.id] : day.reservationIds.slice(0, 1));
+  const nextEventDocuments = useMemo(() => getDocumentsForReservations(nextEventReservationIds, documents), [documents, nextEventReservationIds]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60000);
@@ -41,11 +48,29 @@ export function TodayScreen() {
   }, []);
 
   useEffect(() => {
+    setSavedIds(getSavedDocumentIds());
     void fetch("/api/documents/index", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((index: DocumentIndex) => setDocuments([...index.documents]))
       .catch(() => setDocuments([]));
   }, []);
+
+  const saveNextDay = async () => {
+    const nextDay = day.day < trip.totalDays ? getTripDay(day.day + 1) : undefined;
+    if (!nextDay) return;
+    setSavingNextDay(true);
+    try {
+      const nextReservations = reservations.filter((reservation) => nextDay.reservationIds.includes(reservation.id));
+      const nextDocuments = getDocumentsForDay(nextDay.day, documents);
+      await saveNextDayOffline(nextDay.day, nextReservations, nextDocuments);
+      for (const document of nextDocuments) await saveDocumentOffline(document);
+      setOfflineMessage(`Día ${nextDay.day} guardado offline en este dispositivo.`);
+    } catch {
+      setOfflineMessage("No se pudo guardar el próximo día offline.");
+    } finally {
+      setSavingNextDay(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -66,15 +91,17 @@ export function TodayScreen() {
   if (today.tripPhase === "after_trip") return <AfterTrip />;
 
   return <AppShell><section className="grid gap-3">
+    <StressMode day={day} nextTransfer={nextTransfer} nextDocument={nextEventDocuments[0]} departurePlan={today.departurePlan} />
     <div className="rounded-lg bg-ink p-5 text-white shadow-sm"><p className="text-xs font-black uppercase tracking-wide text-white/60">Modo Hoy</p><h2 className="mt-1 text-2xl font-black">Hoy: Dia {day.day} - {day.date}</h2><p className="mt-1 text-lg font-bold text-white/80">{day.city}</p><p className="mt-3 inline-flex rounded-md bg-white/15 px-3 py-2 text-sm font-black">{getStatusLabel(day.status)}</p><p className="mt-3 text-sm font-semibold text-white/75">{day.nextEvent}</p></div>
 
-    {nextTransfer.type !== "pendiente" || today.departurePlan ? <SectionCard title="Proximo traslado"><div className="grid gap-2"><p className="text-lg font-black text-ink">{nextTransfer.title}</p><p className="text-sm font-black uppercase tracking-wide text-sea">{nextTransfer.type} - {nextTransfer.status}</p><p className="text-sm font-semibold text-ink/70">Hora: {nextTransfer.time}</p>{today.departurePlan?.transportDepartureTime ? <p className="text-sm font-bold text-ink">Salida del transporte: {today.departurePlan.transportDepartureTime}</p> : null}{today.departurePlan?.recommendedArrival ? <p className="text-sm font-bold text-sea">{today.departurePlan.recommendedArrival}</p> : null}{nextTransfer.reservation?.locator ? <p className="text-sm font-semibold text-ink/70">Reserva: {nextTransfer.reservation.locator}</p> : null}</div></SectionCard> : <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p>}
+    {nextTransfer.type !== "pendiente" || today.departurePlan ? <SectionCard title="Próximo"><div className="grid gap-3"><div><p className="text-lg font-black text-ink">{nextTransfer.title}</p><p className="text-sm font-black uppercase tracking-wide text-sea">{nextTransfer.type} · {nextTransfer.status}</p><p className="mt-1 text-sm font-semibold text-ink/70">{nextTransfer.reservation?.origin ?? day.city} → {nextTransfer.reservation?.destination ?? day.nextDestination}</p><p className="mt-1 text-lg font-black text-ink">Inicio: {today.departurePlan?.transportDepartureTime ?? nextTransfer.time}</p><p className="text-sm font-bold text-sea">{today.departurePlan?.recommendedArrival ?? "Tiempo restante: " + getTimeRemaining(day.dateISO, today.departurePlan?.transportDepartureTime ?? nextTransfer.time, now)}</p><p className="text-sm font-bold text-ink">Estado: {getStatusLabel(day.status)}</p></div><div className="grid gap-2 sm:grid-cols-3">{nextEventDocuments[0] ? <QuickDocument document={nextEventDocuments[0]} savedIds={savedIds} onSave={async (document) => { await saveDocumentOffline(document); setSavedIds(getSavedDocumentIds()); }} /> : <span className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Documento: Requiere conexión o está pendiente.</span>}<RiskConfirmationDialog action="Abrir mapa del próximo evento" dataShared={nextTransfer.reservation?.destination ?? day.nextDestination} destination="Google Maps" consequence="Se abrirá un servicio externo de mapas." onConfirm={() => openExternalUrl(day.transfer.mapsUrl)}>{(open) => <button className="rounded-md bg-white px-4 py-4 text-center font-black text-ink" onClick={open} type="button">Abrir mapa</button>}</RiskConfirmationDialog></div>{today.departurePlan?.mode === "uber_or_taxi" && day.hotel?.address ? <RiskConfirmationDialog action="Pedir Uber" dataShared={day.hotel?.address ?? "Destino del hotel"} destination="Uber" consequence="Vas a abrir Uber con este destino. Revisá dirección, horario y tarifa antes de confirmar el viaje." onConfirm={() => openUberToDestination(day.hotel?.address ?? "")}>{(open) => <button className="rounded-md bg-ink px-4 py-4 text-center font-black text-white" onClick={open} type="button">Pedir Uber</button>}</RiskConfirmationDialog> : null}</div></SectionCard> : <p className="rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink/70">Sin traslados urgentes ahora.</p>}
 
     {today.departurePlan ? <SectionCard title="Salir"><div className="grid grid-cols-3 gap-2 text-center"><Time label="Ideal" value={today.departurePlan.idealDepartureTime} /><Time label="Comoda" value={today.departurePlan.comfortableDepartureTime} /><Time label="Limite" value={today.departurePlan.latestDepartureTime} /></div>{today.departurePlan.recommendedArrival ? <p className="mt-3 text-sm font-black text-sea">{today.departurePlan.recommendedArrival}</p> : null}<p className="mt-2 text-sm font-semibold text-ink/70">{today.departurePlan.notes}</p></SectionCard> : null}
 
     <QuickLinks day={day.day} />
+    {day.day < trip.totalDays ? <SectionCard title="Offline"><RiskConfirmationDialog action="Guardar próximo día offline" dataShared={`Datos, reservas y documentos del día ${day.day + 1}`} destination="Cache local de este dispositivo" consequence="Los documentos protegidos quedarán guardados offline sólo después de esta confirmación." onConfirm={() => void saveNextDay()}>{(open) => <button className="w-full rounded-md bg-sea px-4 py-4 text-center font-black text-white disabled:opacity-60" disabled={savingNextDay} onClick={open} type="button">{savingNextDay ? "Guardando..." : "Guardar próximo día offline"}</button>}</RiskConfirmationDialog>{offlineMessage ? <p className="mt-2 rounded-md bg-mist px-3 py-3 text-sm font-bold text-ink">{offlineMessage}</p> : null}</SectionCard> : null}
     <DocumentUpload compact />
-    <AccordionSection badge={quickDocuments.length || undefined} defaultOpen={quickDocuments.length > 0} title="Documentos rapidos">{quickDocuments.length ? <div className="grid gap-2">{quickDocuments.map((document) => <QuickDocument document={document} key={document.id} />)}</div> : <p className="text-sm font-semibold text-ink/65">No hay documentos reales asociados a este dia.</p>}</AccordionSection>
+    <AccordionSection badge={quickDocuments.length || undefined} defaultOpen={quickDocuments.length > 0} title="Documentos rapidos">{quickDocuments.length ? <div className="grid gap-2">{quickDocuments.map((document) => <QuickDocument document={document} key={document.id} savedIds={savedIds} onSave={async (item) => { await saveDocumentOffline(item); setSavedIds(getSavedDocumentIds()); }} />)}</div> : <p className="text-sm font-semibold text-ink/65">No hay documentos reales asociados a este dia.</p>}</AccordionSection>
     <AccordionSection badge={urgentChecklist.length || undefined} defaultOpen={urgentChecklist.some((item) => item.priority === "high")} title="Checklist urgente">{urgentChecklist.length ? <ul className="grid gap-2">{urgentChecklist.map((item) => <li className="flex items-center justify-between gap-3 rounded-md bg-mist px-3 py-3" key={item.id}><span className="font-semibold text-ink">{item.label}</span><span className="text-xs font-black uppercase text-sea">{priorityLabel(item.priority)}</span></li>)}</ul> : <p className="text-sm font-semibold text-ink/65">No hay checklist urgente cargada para este dia.</p>}</AccordionSection>
     <AccordionSection badge={usefulPlaces.length || undefined} title="Lugares utiles">{usefulPlaces.length ? <div className="grid gap-2">{usefulPlaces.map((place) => <QuickPlace place={place} key={place.id} />)}</div> : <p className="text-sm font-semibold text-ink/65">Lugares pendientes de cargar.</p>}</AccordionSection>
     {relatedReservations.length ? <AccordionSection badge={relatedReservations.length} title="Proximas reservas"><ul className="grid gap-2">{relatedReservations.map((reservation) => <li className="rounded-md bg-mist px-3 py-3" key={reservation.id}><p className="font-black text-ink">{reservation.title}</p><p className="text-sm font-semibold text-ink/65">{reservation.date}</p></li>)}</ul></AccordionSection> : null}
@@ -96,10 +123,13 @@ function QuickLinks({ day }: { day: number }) {
   return <div className="grid grid-cols-2 gap-2 sm:grid-cols-4"><Link className="rounded-md bg-sea px-3 py-4 text-center text-sm font-black text-white" href={`/trips/europa-2026/days/${day}`}>Ver dia completo</Link><Link className="rounded-md bg-white px-3 py-4 text-center text-sm font-black text-ink" href="/trips/europa-2026/documentos">Documentos</Link><Link className="rounded-md bg-white px-3 py-4 text-center text-sm font-black text-ink" href="/trips/europa-2026/mapa">Mapa</Link><Link className="rounded-md bg-white px-3 py-4 text-center text-sm font-black text-ink" href="/trips/europa-2026/offline">Offline</Link></div>;
 }
 
-function QuickDocument({ document }: { document: IndexedDocument }) {
+function QuickDocument({ document, savedIds, onSave }: { document: IndexedDocument; savedIds: string[]; onSave: (document: IndexedDocument) => Promise<void> }) {
   const protectedDocument = document.sensitivity === "highly_sensitive" || document.requiresConfirmation;
-  const button = <Link className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" href={getViewerUrl(document)}>Abrir</Link>;
-  return <div className="flex items-center justify-between gap-3 rounded-md bg-mist px-3 py-3"><div><p className="font-bold text-ink">{document.visibleName}</p><p className="text-xs font-black uppercase text-sea">{document.category}</p></div>{protectedDocument ? <RiskConfirmationDialog action="Abrir documento protegido" dataShared={document.visibleName} destination="Visor de VAGACIONES" consequence="Se mostrara un documento sensible." onConfirm={() => { window.location.href = getViewerUrl(document); }}>{(open) => <button className="rounded-md bg-sea px-3 py-2 text-sm font-black text-white" onClick={open} type="button">Abrir</button>}</RiskConfirmationDialog> : button}</div>;
+  const button = <Link className="rounded-md bg-sea px-3 py-3 text-center text-sm font-black text-white" href={getViewerUrl(document)}>Abrir documento</Link>;
+  const saveButton = protectedDocument ? <RiskConfirmationDialog action="Guardar documento protegido offline" dataShared={document.visibleName} destination="Cache local del dispositivo" consequence="El documento quedará disponible offline en este dispositivo." onConfirm={() => { void onSave(document); }}>{(open) => <button className="rounded-md bg-white px-3 py-3 text-sm font-black text-ink" onClick={open} type="button">{savedIds.includes(document.id) ? "Guardado offline" : "Guardar offline"}</button>}</RiskConfirmationDialog> : <button className="rounded-md bg-white px-3 py-3 text-sm font-black text-ink" onClick={() => void onSave(document)} type="button">{savedIds.includes(document.id) ? "Guardado offline" : "Guardar offline"}</button>;
+  return <div className="grid gap-2 rounded-md bg-mist px-3 py-3"><div><p className="font-bold text-ink">{document.visibleName}</p><p className="text-xs font-black uppercase text-sea">{document.availableOffline ? "Disponible offline" : "Requiere conexión"} · {document.category}</p></div><div className="grid grid-cols-2 gap-2">{protectedDocument ? <RiskConfirmationDialog action="Abrir documento protegido" dataShared={document.visibleName} destination="Visor de VAGACIONES" consequence="Se mostrará un documento sensible." onConfirm={() => { window.location.href = getViewerUrl(document); }}>
+    {(open) => <button className="rounded-md bg-sea px-3 py-3 text-sm font-black text-white" onClick={open} type="button">Abrir documento</button>}
+  </RiskConfirmationDialog> : button}{saveButton}</div></div>;
 }
 
 function QuickPlace({ place }: { place: Place }) {
@@ -119,3 +149,13 @@ function documentRank(document: IndexedDocument) { if (document.flightDocumentKi
 function placeRank(place: Place, reservationIds: string[]) { const directlyRelated = place.relatedReservationIds.some((id) => reservationIds.includes(id)); return (directlyRelated ? 0 : 10) + (place.priority === "essential" ? 0 : place.priority === "useful" ? 1 : 2); }
 function priorityRank(priority: ChecklistItem["priority"]) { return priority === "high" ? 0 : priority === "medium" ? 1 : 2; }
 function priorityLabel(priority: ChecklistItem["priority"]) { return priority === "high" ? "Alta" : priority === "medium" ? "Media" : "Baja"; }
+function getTimeRemaining(dateISO: string, time: string, now: Date) {
+  const match = time.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return "Pendiente";
+  const target = new Date(`${dateISO}T${time}:00`);
+  const diff = target.getTime() - now.getTime();
+  if (!Number.isFinite(diff)) return "Pendiente";
+  if (diff <= 0) return "Ahora";
+  const minutes = Math.floor(diff / 60000);
+  return minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
+}
