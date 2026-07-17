@@ -36,7 +36,7 @@ export function DocumentUpload({ compact = false }: { compact?: boolean }) {
       const body = request.response as { results?: Array<{ result?: string; error?: string }>; errors?: string[] } | null;
       const result = body?.results?.[0];
       if (request.status >= 200 && request.status < 300 && result && !result.error) update(item.id, { progress: 100, state: "done", message: result.result === "duplicate" ? "Ya estaba cargado." : "Pendiente de revision." });
-      else update(item.id, { state: "error", message: result?.error ?? body?.errors?.[0] ?? "No se pudo cargar el archivo." });
+      else update(item.id, { state: "error", message: uploadErrorMessage(request.status, result?.error ?? body?.errors?.[0]) });
       resolve();
     };
     request.onerror = () => { update(item.id, { state: "error", message: "No se pudo conectar para cargar el archivo." }); resolve(); };
@@ -52,6 +52,14 @@ export function DocumentUpload({ compact = false }: { compact?: boolean }) {
       await uploadOne(item, event.currentTarget);
     }
     setUploading(false); setNotice("Las cargas terminadas quedan pendientes de revision; ninguna se aprobo automaticamente.");
+  };
+
+  const uploadErrorMessage = (status: number, serverMessage?: string) => {
+    if (status === 401 || status === 403) return "La sesión documental venció. Volvé a entrar para cargar el archivo.";
+    if (status === 413) return "El archivo es demasiado grande. El máximo es 20 MB.";
+    if (status === 415) return "Formato no reconocido. Usá PNG, JPG, WEBP o PDF.";
+    if (status >= 500) return "Error interno al guardar el archivo. Intentá nuevamente.";
+    return serverMessage ?? "No se pudo cargar el archivo. Revisá la selección e intentá nuevamente.";
   };
 
   return <div className={compact ? "rounded-md bg-mist p-3" : "rounded-lg bg-white p-4 shadow-sm"}>
