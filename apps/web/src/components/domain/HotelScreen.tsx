@@ -1,3 +1,5 @@
+"use client";
+
 import { getActiveHotel } from "@/lib/trip-data";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";

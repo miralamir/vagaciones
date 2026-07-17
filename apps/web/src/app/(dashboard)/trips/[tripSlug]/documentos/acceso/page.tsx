@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { clearOfflineDocuments } from "@/lib/document-offline";
 
 function safeReturnTo(value: string | null) {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/trips/europa-2026/documentos";
@@ -34,6 +35,7 @@ export default function DocumentAccessPage() {
 
   const logout = async () => {
     await fetch("/api/documents/session", { method: "DELETE" });
+    await clearOfflineDocuments();
     setMessage("Sesión cerrada.");
   };
 

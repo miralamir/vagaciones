@@ -15,6 +15,7 @@ await testNoPrivateContentInGit();
 await testReviewRouteExists();
 await testServerAuthorization();
 await testPrivateIndexesAndDryRun();
+await testOfflinePwaSafety();
 
 if (failures.length > 0) {
   console.error(failures.join("\n"));
@@ -114,6 +115,18 @@ async function testPrivateIndexesAndDryRun() {
   assert(!importer.includes("document-index.generated.ts"), "Importer still writes versioned TypeScript index.");
   assert(fileRoute.includes('reviewStatus === "approved"'), "Incoming documents can still be served.");
   assert(fileRoute.includes("X-Content-Type-Options"), "Document response lacks nosniff header.");
+}
+
+async function testOfflinePwaSafety() {
+  const manifest = await readFile(path.join(root, "apps", "web", "public", "manifest.webmanifest"), "utf8");
+  const worker = await readFile(path.join(root, "apps", "web", "public", "sw.js"), "utf8");
+  const offline = await readFile(path.join(root, "apps", "web", "src", "lib", "document-offline.ts"), "utf8");
+  const access = await readFile(path.join(root, "apps", "web", "src", "app", "(dashboard)", "trips", "[tripSlug]", "documentos", "acceso", "page.tsx"), "utf8");
+  assert(manifest.includes('"display": "standalone"'), "PWA manifest is not configured for standalone mode.");
+  assert(worker.includes("vagaciones-shell-v1") && worker.includes("networkFirstNavigation"), "Service worker does not cache the safe offline app shell.");
+  assert(worker.includes('url.pathname.startsWith("/api/documents/")'), "Document API boundary is missing from service worker rules.");
+  assert(offline.includes("clearOfflineDocuments") && offline.includes("caches.delete(CACHE_NAME)"), "Offline document cache is not cleared explicitly.");
+  assert(access.includes("clearOfflineDocuments"), "Document logout does not clear offline document data.");
 }
 
 async function fileExists(filePath) {

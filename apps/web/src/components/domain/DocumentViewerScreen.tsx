@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getDocumentFileUrl } from "@/lib/documents";
+import { getSavedOfflineDocuments } from "@/lib/document-offline";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { AppShell } from "./AppShell";
 import { RiskConfirmationDialog } from "./RiskConfirmationDialog";
@@ -26,6 +27,7 @@ export function DocumentViewerScreen({ documentId }: { documentId: string }) {
     void fetch("/api/documents/index", { cache: "no-store" })
       .then((response) => response.json())
       .then((index: DocumentIndex) => setDocument(index.documents.find((item) => item.id === documentId)))
+      .catch(() => setDocument(getSavedOfflineDocuments().find((item) => item.id === documentId)))
       .finally(() => setLoaded(true));
   }, [documentId]);
 
@@ -47,9 +49,11 @@ export function DocumentViewerScreen({ documentId }: { documentId: string }) {
       credentials: "include",
       headers: { Accept: "image/*" }
     })
-      .then((response) => {
-        if (!response.ok) throw new Error(`No se pudo cargar la imagen (${response.status}).`);
-        return response.blob();
+      .then(async (response) => {
+        if (response.ok) return response.blob();
+        const cached = await caches.match(fileUrl);
+        if (cached) return cached.blob();
+        throw new Error(`No se pudo cargar la imagen (${response.status}).`);
       })
       .then((blob) => {
         if (!active) return;

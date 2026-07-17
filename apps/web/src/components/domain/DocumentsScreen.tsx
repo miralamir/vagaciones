@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTripContext } from "@/hooks/useTripContext";
 import { getDocumentsForDay, getViewerUrl } from "@/lib/documents";
-import { getSavedDocumentIds, saveDocumentOffline } from "@/lib/document-offline";
+import { getSavedDocumentIds, getSavedOfflineDocuments, saveDocumentOffline } from "@/lib/document-offline";
 import { getFlightDocumentStatuses } from "@/lib/flight-document-status";
 import type { DocumentCategory, DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { AppShell } from "./AppShell";
@@ -41,7 +41,7 @@ export function DocumentsScreen() {
     void fetch("/api/documents/index", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((index: DocumentIndex) => setDocuments([...index.documents]))
-      .catch(() => setDocuments([]));
+      .catch(() => setDocuments(getSavedOfflineDocuments()));
   }, []);
 
   const filtered = useMemo(() => documents.filter((document) => {

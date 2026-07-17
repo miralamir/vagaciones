@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "VAGACIONES",
-  description: "Administrador personal de viajes"
+  description: "Administrador personal de viajes",
+  manifest: "/manifest.webmanifest"
 };
 
 export const viewport: Viewport = {

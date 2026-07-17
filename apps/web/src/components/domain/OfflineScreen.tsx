@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTripContext } from "@/hooks/useTripContext";
 import { getOfflineDocuments } from "@/lib/documents";
-import { getOfflineLastSync, getSavedDocumentIds, saveDocumentOffline } from "@/lib/document-offline";
+import { getOfflineLastSync, getSavedDocumentIds, getSavedOfflineDocuments, saveDocumentOffline } from "@/lib/document-offline";
 import type { DocumentIndex, IndexedDocument } from "@/lib/document-types";
 import { AppShell } from "./AppShell";
 import { SectionCard } from "./Cards";
@@ -23,7 +23,7 @@ export function OfflineScreen() {
     void fetch("/api/documents/index", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : Promise.reject())
       .then((index: DocumentIndex) => setDocuments([...index.documents]))
-      .catch(() => setDocuments([]));
+      .catch(() => setDocuments(getSavedOfflineDocuments()));
   }, []);
 
   const essential = useMemo(() => getOfflineDocuments(context.activeDay.day, documents).filter((document) => document.storageAvailable !== false), [context.activeDay.day, documents]);
